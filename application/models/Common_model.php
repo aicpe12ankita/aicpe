@@ -1118,7 +1118,6 @@ class Common_model extends CI_Model
         return $setting_list;
     }
 
-    
     /*
     @Description  : Get User Settings
     @Author       : Harshad Hirapara
@@ -1155,8 +1154,6 @@ class Common_model extends CI_Model
  
     	return $user_setting_list;
     }
-
-
 
     /* End Email System Code */
 }

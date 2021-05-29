@@ -1,19 +1,19 @@
 <table class='custom_table table' id='empTable'>
     <thead>
-        <tr>
+         <tr>
             <th>Sr. No.</th>
-            <th>Photo</th>
+            <th>Photo </th>
             <th>Student Name </th>
-            <th>Certificate No.</th>
-            <th>Mobile </th>
-            <th>Username</th>
+            <th>Student ID </th>
+            <th>Course & Duration</th>
+            <th>Username </th>
             <th>Password</th>
-            <th>Grade</th>
-            <th>Exam Date </th>
-            <th>Certificate Date </th>
-            <th>Admission Date </th>
+            <th>Course Fees</th>
+            <th>Balance Fees</th>
+            <th>Available Exam Mode</th>
+            <th>Status</th>
             <th>Action</th>
-        </tr>
+      </tr>
     </thead>
     <tbody>
         <?php if($data!=""){ 
@@ -30,11 +30,12 @@
                         <p class="text-muted"><?= get_value($row,'student_name','-'); ?></p>
                     </td>
                     <td>
-                        <p class="text-muted"><?= get_value($row,'certificate_no','-'); ?></p>
+                        <p class="text-muted"><?= get_value($row,'student_id','-'); ?></p>
                     </td>
                     <td>
-                        <p class="text-muted"><?= get_value($row,'mobile_no','-'); ?></p>
+                        <p class="text-muted"><?= get_value($row,'course_duration','-'); ?></p>
                     </td>
+                   
                     <td>
                         <p class="text-muted"><?= get_value($row,'username','-'); ?></p>
                     </td>
@@ -42,21 +43,20 @@
                         <p class="text-muted"><?= get_value($row,'password','-'); ?></p>
                     </td>
                     <td>
-                        <p class="text-muted"><?= get_value($row,'grade','-'); ?></p>
+                        <p class="text-muted"><?= currency_symbol_icon().currency_format(get_value($row,'course_fee','0.00')); ?></p>
                     </td>
                     <td>
-                        <p class="text-muted"><?=format_date($row['exam_date'])?></p>
+                        <p class="text-muted"><?= currency_symbol_icon().currency_format(get_value($row,'balance_fee','0.00')); ?></p>
                     </td>
                     <td>
-                        <p class="text-muted"><?=format_date($row['certificate_date'])?></p>
+                        <p class="text-muted"><?= get_value($row,'available_exam_mode','-'); ?></p>
                     </td>
                     <td>
-                        <p class="text-muted"><?=format_date($row['admission_date'])?></p>
+                        <p class="text-muted"><?= get_value($row,'status','-'); ?></p>
                     </td>
                     <td>
-                        <a href="#" class="btn btn-xs btn-primary mb-1" onclick="edit_old_student_by_id('<?php echo $row['id']; ?>');"><i class="simple-icon-note"></i>
-                        </a>
-                        <a href="javascript:void(0);" class="btn btn-xs btn-warning mb-1"  onclick="delete_old_student_by_id('<?php echo $row['id']; ?>');"><i class="simple-icon-trash"></i></a>
+                        <a href="javascript:void(0);" class="btn btn-xs btn-primary mb-1" onclick="edit_exam_status_by_id('<?php echo($row['id']); ?>');"><i class="simple-icon-note"></i></a>
+                        <a href="javascript:void(0);" class="btn btn-xs btn-warning mb-1"  onclick="delete_exam_status_by_id('<?php echo $row['id']; ?>');"><i class="simple-icon-trash"></i></a>
                         <!-- <a href="#" class="btn btn-xs btn-warning mb-1"><i class="simple-icon-trash"></i></a> -->
 
                     </td>

@@ -20,13 +20,6 @@
                                    <?php $i=$from_records; foreach ($data as $row) { ?>   
                                     <tr>
                                         <td>
-                                            <div class="checkbox pull-left">
-                                                <label>
-                                                  <input order_id="<?php echo $row["id"];  ?>" name="id[]" value="<?php echo $row["id"];  ?>" type="checkbox" class=check-child>
-                                                </label>
-                                            </div>
-                                        </td>
-                                        <td>
                                             <p class="list-item-heading"><?php echo $i; ?></p>
                                         </td>
                                         <td>
@@ -52,14 +45,9 @@
                                             <p class="text-muted"><?php echo  date('d-m-y',strtotime($row['date_of_enquiry'])); ?></p>
                                         </td>
                                         <td>
-                                            <a href="#" class="btn btn-xs btn-primary mb-1"><i class="simple-icon-note"></i></a>
+                                            <a href="" class="btn btn-xs btn-primary mb-1"><i class="simple-icon-note"></i></a>
                                             <a href="#" class="btn btn-xs btn-warning mb-1"><i class="simple-icon-trash"></i></a>
                                             <a href="<?php echo base_url(); ?>/institutions-register-student" class="btn btn-xs btn-danger">Register</a>
-
-                                            <a href="javascript:void(0);"  onclick="print_test();">
-                                                <i class="simple-icon-note"></i>
-                                            </a>
-
                                         </td>
                                     </tr>
                                    <?php $i++; } ?>

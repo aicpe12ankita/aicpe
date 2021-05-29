@@ -215,13 +215,370 @@ class Institutions extends MY_Controller{
 	    echo json_encode($data);
   	}
 
+  	/*
+	@Description  : admission list
+	@Author       : Varsha wankhede
+	@Date         : 18-05-2021
+	*/
+
 	public function admissions(){
-		$this->load->view('admin/institution/admissions');
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+	
+		$data['data'] = $this->Institution_model->get_admissions('data',$where_data);
+		
+		$data['total_records'] =  $this->Institution_model->get_admissions('count',$where_data);
+		
+		 // Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-admissions/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/admissions',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/admissions_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+		//$this->load->view('admin/institution/admissions');
 	}
 
-	public function payments(){
-		$this->load->view('admin/institution/payments');
+	/*
+    @Author      : Varsha Wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 27-05-2021
+    */
+
+    public function edit_admissions()
+    {
+        $id =  $this->input->post('id');
+       
+    	$message = array(
+                    'type' => 'error',
+                    'msg'  => 'Something went wrong!'
+                );
+    	// $data['grade_array'] = array(
+    	// 	'A+' => 'A+',
+    	// 	'B+' => 'B+',
+    	// 	'C+' => 'C+',
+    	// 	'D+' => 'D+'
+    	// );
+   
+        if(isset($id) && $id != '')
+        {        	
+        	$get_admission_detail = $this->common_model->select_by_key('aicpe_admission_list',array('id' =>$id));
+
+        	$data['student_data'] = isset($get_admission_detail[0]) && count($get_admission_detail[0]) > 0 ? $get_admission_detail[0] : array();
+        	
+        	
+        	$html =  parent::s_render('admin/institution/edit_admissions_modal',$data,true);
+             
+             $message = array('type'=>'success',
+             	'view'=>$html
+         		);
+        }
+       
+        echo json_encode($message);
+    }
+
+    /*
+	@Description  : save admission list
+	@Author       : Varsha wankhede
+	@Date         : 27-05-2021
+	*/
+
+   public function save_admissions()
+	{
+		
+		$post_data = $this->input->post();  
+		$response = array('type'=>'error','msg'=>'Something went wrong! Please try again.');
+
+		$update_array = array();
+
+		if(!empty($this->input->post('id')) && $this->input->post('id') !== '')
+		{
+			$update_array = array(
+				'username' => is_not_empty($post_data['username']) ? $post_data['username'] : '',
+				'password' => is_not_empty($post_data['password']) ? $post_data['password'] : '',
+				'student_name' => is_not_empty($post_data['name']) ? $post_data['name'] : '',
+				'course_duration' => is_not_empty($post_data['course_duration']) ? $post_data['course_duration'] : '',
+				'course_fee' => is_not_empty($post_data['course_fee']) ? $post_data['course_fee'] : '',
+				'balance_fee' => is_not_empty($post_data['balance_fee']) ? $post_data['balance_fee'] : '',
+				
+				'admission_date' => isset($post_data['admissiondate']) ? format_date($post_data['admissiondate'],'Y-m-d H:i:s') : '',
+
+			);
+			
+			$where_data = array(
+				'id' => $post_data['id'],						
+			); 
+
+			if(count($update_array)>0)
+			{
+				$this->common_model->update_by_where_array('aicpe_admission_list',$where_data,$update_array);
+
+				$response = array('type'=>'success','msg'=>'Admission data updated successfully.');
+			}
+
+			
+		}
+		
+		echo json_encode($response);
 	}
+
+
+	/*
+	@Description  :  delete admission list
+	@Author       : Varsha wankhede
+	@Date         : 18-05-2021
+	*/
+
+	public function delete_admissions()
+    {  
+        $user_id          = $this->log_in_user_id;
+        $id               = $this->input->post('id');
+        
+        if($this->Institution_model->delete_admissions($id,$user_id))
+        {
+            $message = array(
+                'type' => 'success',
+                'msg'  => 'Admissions deleted successfully'
+            );
+        }
+        else
+        {
+            $message = array(
+                'type' => 'error',
+                'msg'  => 'Something Went Wrong!'
+            );
+        }
+        echo json_encode($message);
+        exit;
+    }
+
+    /*
+    @Description : export admission
+    @Author      : Varsha wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 18-05-2021
+	*/
+	public function admissions_export()
+    {
+            
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+            "sort_by"        => $this->get_page_vars('sort_by', 'id'),
+            "sort_direction" => $this->get_page_vars('sort_direction', 'ASC'),
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_admissions('data',$where_data);
+        
+        $filename  = 'Institutions_aicpe_admissions'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        $header[] = 'Student Name';
+        $header[] = 'Course & Duration';
+        $header[] = 'Username';
+        $header[] = 'Password';
+        $header[] = 'Course Fees';
+        $header[] = 'Balance Fees';
+        $header[] = 'Admission Date';
+        $header[] = 'status';
+        
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+                $rows   = array();
+               
+                $rows[] = get_value($row,'student_name','-');
+                $rows[] = get_value($row,'course_duration','-');
+                $rows[] = get_value($row,'username','-');
+                $rows[] = get_value($row,'password','-');
+                $rows[] = get_value($row,'course_fee','-');          
+                $rows[] = get_value($row,'balance_fee','-');
+                $rows[] = format_date($row['admission_date']);
+                $rows[] =  $row['status'] =='0' ? 'Enable' : 'Disable';
+              
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'AICPE admission');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+
+    /*
+	@Description  : payments list
+	@Author       : varsha Wankhede
+	@Date         : 20-05-2021
+	*/
+    public function payments(){
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+	
+		$data['data'] = $this->Institution_model->get_payments('data',$where_data);
+		
+		$data['total_records'] =  $this->Institution_model->get_payments('count',$where_data);
+		
+		 // Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-payments/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/payments',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/payments_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+		//$this->load->view('admin/institution/payments');
+	}
+	
+    /*
+    @Description : export payments list. 
+    @Author      : Varsha wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 20-05-2021
+	*/
+	public function payments_export()
+    {
+            
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+            "sort_by"        => $this->get_page_vars('sort_by', 'id'),
+            "sort_direction" => $this->get_page_vars('sort_direction', 'ASC'),
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_payments('data',$where_data);
+        
+        $filename  = 'Institutions_aicpe_payments'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        $header[] = 'Student Id';
+        $header[] = 'Student Name';
+        $header[] = 'Certificate No.';
+        $header[] = 'Course Fees';
+        $header[] = 'Paid Fees';
+        $header[] = 'Balance Fees';
+        $header[] = 'status';
+        
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+                $rows   = array();
+               
+                $rows[] = get_value($row,'student_id','-');
+                $rows[] = get_value($row,'student_name','-');
+                $rows[] = isset($row['course_duration']) && $row['course_duration']!=='' ? get_value($row,'course_duration','6 Month') : '6 Months';
+                $rows[] = currency_symbol_icon().currency_format(get_value($row,'course_fee','0.00'));
+                $rows[] = currency_symbol_icon().currency_format(get_value($row,'paid_fee','0.00'));         
+                $rows[] = currency_symbol_icon().currency_format(get_value($row,'balance_fee','0.00'));         
+                
+              
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'AICPE payments ');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+
+   	/*
+    @Description : update Non AICPE course ata
+    @Author      : Ankita Mandlik
+    @Input       : 
+    @Output      : 
+    @Date        : 27-06-2021
+    */
+
+    public function get_payments_history()
+    {
+        $id =  $this->input->post('id');
+
+    	$message = array(
+                    'type' => 'error',
+                    'msg'  => 'Something went wrong!'
+                );
+        ////////////
+
+        if(isset($id) && $id != '')
+        {
+
+        	$student_data = $this->common_model->select_by_key('aicpe_student',array('id' =>$id));
+
+        	$data['student_data'] = isset($student_data[0]) && count($student_data[0]) > 0 ? $student_data[0] : array();
+        	$data['get_payments_history'] = $this->Institution_model->get_payments_history($id);
+        	
+        	$html =  parent::s_render('admin/institution/payment_history_modal',$data,true);
+             
+             $message = array('type'=>'success',
+             	'html'=>$html
+         		);
+        }
+       
+        echo json_encode($message);
+    }
 
 	public function add_student(){
 		$this->load->view('admin/institution/add_student');
@@ -254,7 +611,7 @@ class Institutions extends MY_Controller{
         ); 
 	
 		$data['data'] = $this->Institution_model->get_old_students('data',$where_data);
-		//pr($this->db->last_query());
+		
 		$data['total_records'] =  $this->Institution_model->get_old_students('count',$where_data);
 		
 		 // Set page configs
@@ -375,14 +732,450 @@ class Institutions extends MY_Controller{
         $message = json_encode(base_url().'uploads/temp/'.$filename);
         echo $message;
     }
+    /*
+    @Description : Edit Old Student Data
+    @Author      : Varsha Wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 25-05-2021
+    */
 
-	public function dropout_students(){
-		$this->load->view('admin/institution/dropout_students');
+    public function edit_old_students()
+    {
+        $id =  $this->input->post('id');
+
+    	$message = array(
+                    'type' => 'error',
+                    'msg'  => 'Something went wrong!'
+                );
+        ////////////
+
+    	$data['grade_array'] = array(
+    		'A+' => 'A+',
+    		'B+' => 'B+',
+    		'C+' => 'C+',
+    		'D+' => 'D+',
+    	);
+
+
+        if(isset($id) && $id != '')
+        {
+
+        	$student_data = $this->common_model->select_by_key('aicpe_student',array('id' =>$id));
+
+        	$data['student_data'] = isset($student_data[0]) && count($student_data[0]) > 0 ? $student_data[0] : array();
+        	//$data['get_old_students_detail'] = $this->Institution_model->edit_old_students($id);
+        	//pr($data);
+        	$html =  parent::s_render('admin/institution/old_students_edit_modal',$data,true);
+             
+             $message = array('type'=>'success',
+             	'html'=>$html
+         		);
+        }
+       
+        echo json_encode($message);
+    }
+
+    public function save_old_students()
+	{
+		
+		$post_data = $this->input->post();  
+		$response = array('type'=>'error','msg'=>'Something went wrong! Please try again.');
+
+		$update_array = array();
+
+		if(!empty($this->input->post('id')) && $this->input->post('id') !== '')
+		{
+			$update_array = array(
+				'username' => is_not_empty($post_data['username']) ? $post_data['username'] : '',
+				'password' => is_not_empty($post_data['password']) ? $post_data['password'] : '',
+				'student_name' => is_not_empty($post_data['name']) ? $post_data['name'] : '',
+				'mobile_no' => is_not_empty($post_data['mobileno']) ? $post_data['mobileno'] : '',
+				'grade' => is_not_empty($post_data['grade']) ? $post_data['grade'] : '',
+				'exam_date' => isset($post_data['examdate']) ? format_date($post_data['examdate'],'Y-m-d H:i:s'): '',
+				'certificate_date' => isset($post_data['certificatedate']) ? format_date($post_data['certificatedate'],'Y-m-d H:i:s') : '',
+				'admission_date' => isset($post_data['admissiondate']) ? format_date($post_data['admissiondate'],'Y-m-d H:i:s') : '',
+
+			);
+			
+			$where_data = array(
+				'id' => $post_data['id'],						
+			); 
+
+			if(count($update_array)>0)
+			{
+				$this->common_model->update_by_where_array('aicpe_student',$where_data,$update_array);
+
+				$response = array('type'=>'success','msg'=>'Student data updated successfully.');
+			}
+
+			
+		}
+		
+		echo json_encode($response);
 	}
 
-	public function aicpe_world_membership(){
-		$this->load->view('admin/institution/aicpe_world_membership');
+
+
+	public function dropout_students()
+	{
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+	
+		$data['data'] = $this->Institution_model->get_dropout_students('data',$where_data);
+		//pr($this->db->last_query());
+		$data['total_records'] =  $this->Institution_model->get_dropout_students('count',$where_data);
+		
+		 // Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-dropout-students/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/dropout_students',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/dropout_students_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+		//$this->load->view('admin/institution/dropout_students');
 	}
+	/*
+    @Description : Delete dropout student
+    @Author      : Varsha Wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 18-05-2021
+	*/
+
+    public function delete_dropout_students()
+    {  
+        $user_id          = $this->log_in_user_id;
+        $id               = $this->input->post('id');
+        
+        if($this->Institution_model->delete_dropout_students($id,$user_id))
+        {
+            $message = array(
+                'type' => 'success',
+                'msg'  => 'dropout students deleted successfully'
+            );
+        }
+        else
+        {
+            $message = array(
+                'type' => 'error',
+                'msg'  => 'Something Went Wrong!'
+            );
+        }
+        echo json_encode($message);
+        exit;
+    }
+
+    /*
+    @Author      : Varsha Wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 26-05-2021
+    */
+
+    public function edit_dropout_students()
+    {
+        $id =  $this->input->post('id');
+       
+    	$message = array(
+                    'type' => 'error',
+                    'msg'  => 'Something went wrong!'
+                );
+    	$data['grade_array'] = array(
+    		'A+' => 'A+',
+    		'B+' => 'B+',
+    		'C+' => 'C+',
+    		'D+' => 'D+'
+    	);
+   
+        if(isset($id) && $id != '')
+        {
+        	  // pr($id);
+        	$student_data = $this->common_model->select_by_key('aicpe_student',array('id' =>$id));
+
+        	$data['student_data'] = isset($student_data[0]) && count($student_data[0]) > 0 ? $student_data[0] : array();
+        	$data['get_dropout_students_detail'] = $this->Institution_model->get_student_payment_by_id($id);
+        	//pr($data);
+        	$html =  parent::s_render('admin/institution/dropout_students_edit_modal',$data,true);
+             
+             $message = array('type'=>'success',
+             	'view'=>$html
+         		);
+        }
+       
+        echo json_encode($message);
+    }
+    public function save_dropout_students()
+	{
+		
+		$post_data = $this->input->post(); 
+		//pr($post_data); 
+		$response = array('type'=>'error','msg'=>'Something went wrong! Please try again.');
+
+		$update_array = array();
+
+		if(!empty($this->input->post('id')) && $this->input->post('id') !== '')
+		{
+			$update_array = array(
+				'username' => is_not_empty($post_data['username']) ? $post_data['username'] : '',
+				'password' => is_not_empty($post_data['password']) ? $post_data['password'] : '',
+				'student_name' => is_not_empty($post_data['name']) ? $post_data['name'] : '',
+				'mobile_no' => is_not_empty($post_data['mobileno']) ? $post_data['mobileno'] : '',
+				'email' => is_not_empty($post_data['email']) ? $post_data['email'] : '',
+				'grade' => is_not_empty($post_data['grade']) ? $post_data['grade'] : '',
+				'exam_date' => isset($post_data['examdate']) ? format_date($post_data['examdate'],'Y-m-d H:i:s'): '',
+				'admission_date' => isset($post_data['admissiondate']) ? format_date($post_data['admissiondate'],'Y-m-d H:i:s') : '',
+				'course_fee' => is_not_empty($post_data['course_fee']) ? $post_data['course_fee'] : '',
+				'balance_fee' => is_not_empty($post_data['balance_fee']) ? $post_data['balance_fee'] : '',
+				'course_duration' => is_not_empty($post_data['course_duration']) ? $post_data['course_duration'] : '',
+
+			);
+			
+			$where_data = array(
+				'id' => $post_data['id'],						
+			); 
+			//pr($update_array);
+			if(count($update_array)>0)
+			{
+				$this->common_model->update_by_where_array('aicpe_student',$where_data,$update_array);
+
+				$response = array('type'=>'success','msg'=>'Dropout Student data updated successfully.');
+			}
+
+			
+		}
+		
+		echo json_encode($response);
+	}
+
+
+    /*
+    @Description : Export dropout students
+    @Author      : Varsha Wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 18-05-2021
+	*/
+	public function dropout_students_export()
+    {
+            
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+            "sort_by"        => $this->get_page_vars('sort_by', 'id'),
+            "sort_direction" => $this->get_page_vars('sort_direction', 'ASC'),
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_dropout_students('data',$where_data);
+        
+        $filename  = 'Institutions_aicpe_dropout_students'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        $header[] = 'Student ID';
+        $header[] = 'Student Name';
+        $header[] = 'Course duration';
+        $header[] = 'Username';
+        $header[] = 'Password';
+        $header[] = 'Email';
+        $header[] = 'Mobile';
+        $header[] = 'Grade';
+        $header[] = 'Exam Date';
+        $header[] = 'Course Fee';
+        $header[] = 'Balance Fee';
+        $header[] = 'Admission Date';
+        $header[] = 'status';
+        
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+                $rows   = array();
+               
+                $rows[] = get_value($row,'student_id','-');
+                $rows[] = get_value($row,'student_name','-');
+                $rows[] = get_value($row,'course_duration','6 Months');
+                $rows[] = get_value($row,'username','-');
+                $rows[] = get_value($row,'password','-');
+                $rows[] = get_value($row,'Email','-');
+                $rows[] = get_value($row,'mobile_no','-');
+               	$rows[] = get_value($row,'grade','-');          
+                $rows[] = format_date($row['exam_date']);
+                $rows[] = currency_symbol_icon().currency_format('0.00');
+                $rows[] = currency_symbol_icon().currency_format('0.00');
+                $rows[] = format_date($row['admission_date']);
+                $rows[] =  $row['status'] =='0' ? 'Enable' : 'Disable';
+              
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'AICPE Old Student');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+
+    /*
+	@Description  : aicpe world membership list
+	@Author       :Varsha Wankhede
+	@Date         : 19-05-2021
+	*/
+
+    public function aicpe_world_membership(){
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+	
+		$data['data'] = $this->Institution_model->get_aicpe_world_membership('data',$where_data);
+		//pr($this->db->last_query());
+		$data['total_records'] =  $this->Institution_model->get_aicpe_world_membership('count',$where_data);
+		
+		 // Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-aicpe-world-membership/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/aicpe_world_membership',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/aicpe_world_membership_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+
+		//$this->load->view('admin/institution/aicpe_world_membership');
+	}
+	 /*
+    @Description : Export world membership
+    @Author      : Varsha Wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 19-05-2021
+	*/
+	public function aicpe_world_membership_export()
+    {
+            
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+            "sort_by"        => $this->get_page_vars('sort_by', 'id'),
+            "sort_direction" => $this->get_page_vars('sort_direction', 'ASC'),
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_aicpe_world_membership('data',$where_data);
+        
+        $filename  = 'Institutions_aicpe_world_membership'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        $header[] = 'Student Name';
+        $header[] = 'Email';
+        $header[] = 'Mobile no.';
+        $header[] = 'Whatsapp no.';
+        $header[] = 'Institute Staff';
+       
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+                $rows   = array();
+               
+                $rows[] = $row['first_name']." ".$row['middle_name']." ".$row['last_name'];
+                $rows[] = get_value($row,'email','-');
+                $rows[] = get_value($row,'mobile_no','-');
+               	$rows[] = get_value($row,'whatsapp_no','-');          
+               	$rows[] = get_value($row,'assign_staff','-');          
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'AICPE world membership');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+
+    /*
+    @Description : Delete aicpe world membership
+    @Author      : Varsha Wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 19-05-2021
+	*/
+
+    public function delete_aicpe_world_membership()
+    {  
+        $user_id          = $this->log_in_user_id;
+        $id               = $this->input->post('id');
+        
+        if($this->Institution_model->delete_aicpe_world_membership($id,$user_id))
+        {
+            $message = array(
+                'type' => 'success',
+                'msg'  => 'dropout students deleted successfully'
+            );
+        }
+        else
+        {
+            $message = array(
+                'type' => 'error',
+                'msg'  => 'Something Went Wrong!'
+            );
+        }
+        echo json_encode($message);
+        exit;
+    }
 
 	public function assignments(){
 		$this->load->view('admin/institution/assignments');
@@ -1493,7 +2286,7 @@ class Institutions extends MY_Controller{
                         {
                             $error  = array('error'  => $this->upload->display_errors());
                             
-                        }
+                        }	
                         else
                         {
                             $img_3  = $this->upload->data('file_name');
@@ -1748,14 +2541,345 @@ class Institutions extends MY_Controller{
 	public function role_management(){
 		$this->load->view('admin/institution/role_management');
 	}
+	/*
+	@Description  : exam status 
+	@Author       : Varsha wankhede
+	@Date         : 24-05-2021
+	*/
 	
 	public function exam_status(){
-		$this->load->view('admin/institution/exam_status');
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+	
+		$data['data'] = $this->Institution_model->get_exam_status('data',$where_data);
+		//pr($this->db->last_query());
+		$data['total_records'] =  $this->Institution_model->get_exam_status('count',$where_data);
+		
+		 // Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-exam-status/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/exam_status',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/exam_status_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+
+		//$this->load->view('admin/institution/exam_status');
+	}
+	/*
+	@Description  : delete exam status
+	@Author       : Varsha wankhede
+	@Date         : 24-05-2021
+	*/
+
+	public function delete_exam_status()
+    {  
+        $user_id          = $this->log_in_user_id;
+        $id               = $this->input->post('id');
+       
+        if($this->Institution_model->delete_exam_status($id,$user_id))
+        {
+            $message = array(
+                'type' => 'success',
+                'msg'  => 'Exam Status deleted successfully'
+            );
+        }
+        else
+        {
+            $message = array(
+                'type' => 'error',
+                'msg'  => 'Something Went Wrong!'
+            );
+        }
+        echo json_encode($message);
+        exit;
+    }
+    /*
+	@Description  : save exam status
+	@Author       : Varsha wankhede
+	@Date         : 28-05-2021
+	*/
+
+   public function save_exam_status()
+	{
+		
+		$post_data = $this->input->post();
+		
+		$response = array('type'=>'error','msg'=>'Something went wrong! Please try again.');
+
+		$update_array = array();
+		$update_student_array = array();
+
+		if(!empty($this->input->post('id')) && $this->input->post('id') !== '')
+		{
+			$update_array = array(
+
+				'available_exam_mode' => is_not_empty($post_data['available_exam_mode']) ? $post_data['available_exam_mode'] : '',
+				
+
+			);
+			
+			$where_data = array(
+				'id' => $post_data['id'],						
+			); 
+
+
+			$update_student_array = array(
+				'username' => is_not_empty($post_data['username']) ? $post_data['username'] : '',
+				'password' => is_not_empty($post_data['password']) ? $post_data['password'] : '',
+				'student_name' => is_not_empty($post_data['name']) ? $post_data['name'] : '',				
+				'course_duration' => is_not_empty($post_data['course_duration']) ? $post_data['course_duration'] : '',
+				'course_fee' => is_not_empty($post_data['course_fee']) ? $post_data['course_fee'] : '',
+				'balance_fee' => is_not_empty($post_data['balance_fee']) ? $post_data['balance_fee'] : '',
+			);
+
+			$where_data_student = array(
+				'id' => $post_data['student_id'],						
+			);
+
+
+			if(count($update_array)>0)
+			{
+				$this->common_model->update_by_where_array('aicpe_exam_status',$where_data,$update_array);
+
+				$response = array('type'=>'success','msg'=>'Exam status data updated successfully.');
+			}
+
+			if(count($update_student_array)>0)
+			{
+				$this->common_model->update_by_where_array('aicpe_student',$where_data_student,$update_student_array);
+
+				$response = array('type'=>'success','msg'=>'Exam status data updated successfully.');
+			}
+
+			
+		}
+		
+		echo json_encode($response);
 	}
 
+
+
+	/*
+    @Author      : Varsha Wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 27-05-2021
+    */
+
+    public function edit_exam_status()
+    {
+        $id =  $this->input->post('id');
+       
+    	$message = array(
+                    'type' => 'error',
+                    'msg'  => 'Something went wrong!'
+                );
+   
+        if(isset($id) && $id != '')
+        {        	
+        	$data['get_exam_status_detail'] = $this->Institution_model->get_exam_status_detail($id);
+
+        	$html =  parent::s_render('admin/institution/edit_exam_status_modal',$data,true);
+             
+             $message = array('type'=>'success',
+             	'view'=>$html
+         		);
+        }
+       
+        echo json_encode($message);
+    }
+
+    public function exam_status_export()
+    {        
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+        $where_data =   array(
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_exam_status('data',$where_data);
+     	 
+        $filename  = 'exam_status_export'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        $header[] = 'Student Name';
+        $header[] = 'Student ID';
+        $header[] = 'Course & Duration';
+        $header[] = 'Username';
+        $header[] = 'Password';
+        $header[] = 'Course Fees';
+        $header[] = 'Balance Fees';
+        $header[] = 'Available Exam Mode';
+        $header[] = 'Status';
+        
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+                $rows   = array();
+                $rows[] = get_value($row,'student_name','-');
+                $rows[] = get_value($row,'student_id','-');
+                $rows[] = isset($row['course_duration']) && $row['course_duration']!=='' ? get_value($row,'course_duration','6 Month') : '6 Months';
+                $rows[] = get_value($row,'username','-');
+                $rows[] = get_value($row,'password','-');
+                $rows[] = currency_symbol_icon().currency_format(get_value($row,'course_fee','0.00'));         
+                $rows[] = currency_symbol_icon().currency_format(get_value($row,'balance_fee','0.00'));  
+                $rows[] = get_value($row,'available_exam_mode','-'); 
+                $rows[] = get_value($row,'status','-'); 
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'AICPE Exam Status');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+    /*
+	@Description  : list of hall tickets
+	@Author       : Varsha wankhede
+	@Date         : 25-05-2021
+	*/
 	public function hall_tickets(){
-		$this->load->view('admin/institution/hall_tickets');
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+	
+		$data['data'] = $this->Institution_model->get_hall_tickets('data',$where_data);
+		//pr($this->db->last_query());
+		$data['total_records'] =  $this->Institution_model->get_hall_tickets('count',$where_data);
+		
+		 // Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-hall-tickets/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/hall_tickets',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/hall_tickets_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+
+		//$this->load->view('admin/institution/hall_tickets');
 	}
+	public function hall_tickets_export()
+    {
+
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+        $where_data =   array(
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_hall_tickets('data',$where_data);
+     	// pr($this->db->last_query());
+        $filename  = 'hall_tickets_export'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        $header[] = 'Course Name';
+        $header[] = 'Student Name';
+        $header[] = 'Exam Date';
+        $header[] = 'Center Code';
+        $header[] = 'Center Name';
+       
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+            	//pr($row);
+                $rows   = array();
+                $rows[] = get_value($row,'course_name','-');
+                $rows[] = get_value($row,'student_name','-');
+                $rows[] = get_value($row,'exam_date','-');
+                $rows[] = get_value($row,'center_code','-');
+                $rows[] = get_value($row,'center_name','-');
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'AICPE Hall Ticket');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+    /*
+	@Description  :delete hall tickets
+	@Author       : Varsha wankhede
+	@Date         : 25-05-2021
+	*/
+
+	public function delete_hall_tickets()
+    {  
+        $user_id          = $this->log_in_user_id;
+        $id               = $this->input->post('id');
+       
+        if($this->Institution_model->delete_hall_tickets($id,$user_id))
+        {
+            $message = array(
+                'type' => 'success',
+                'msg'  => 'Hall Tickets deleted successfully'
+            );
+        }
+        else
+        {
+            $message = array(
+                'type' => 'error',
+                'msg'  => 'Something Went Wrong!'
+            );
+        }
+        echo json_encode($message);
+        exit;
+    }
 
 	public function secrete_codes(){
 		$this->load->view('admin/institution/secrete_codes');

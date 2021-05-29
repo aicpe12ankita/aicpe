@@ -266,6 +266,36 @@ function page_update()
         },
     });
 }
+
+
+function edit_enquiries(id)
+{
+    $.ajax({
+            url         : '<?php echo base_url(); ?>institutions-add-non-courses',
+            type        : 'POST',
+            dataType    : 'json',
+            data : {id :id},
+            beforeSend: function(){
+              
+                $(".main-loader").show();
+            },
+            success:function(data)
+            { 
+                
+                if(data.type=='success')
+                {
+                    $('#addCourse').html(data.html);
+                    $('#addCourse').modal('show'); 
+                }
+                else
+                {
+                    toastr['error']('Something went wrong! Please try again');
+                }
+                           
+            }
+        });
+       
+}
 </script>
 <script type="text/javascript">
      $(document).ready(function(){
@@ -365,26 +395,4 @@ function page_update()
     });
 
 });
-
-     function print_test(id='')
-     {        
-        var order_id_array= [];
-
-        if(id !=='')
-        {
-           order_id_array.push(id);
-        }
-        else
-        {
-            $('.check-child:checked').each(function(){
-                var order_id = $(this).attr('order_id');
-                order_id_array.push(order_id);
-            }); 
-        }
-         
-             var path = '<?php base_url(); ?>';         
-             var url = path +'prints/print_test_print_call/?ids='+order_id_array;
-
-            window.open(url,150,150);  
-     }
 </script>

@@ -1,17 +1,14 @@
 <table class='custom_table table' id='empTable'>
     <thead>
-        <tr>
+         <tr>
             <th>Sr. No.</th>
-            <th>Photo</th>
-            <th>Student Name </th>
-            <th>Certificate No.</th>
-            <th>Mobile </th>
-            <th>Username</th>
-            <th>Password</th>
-            <th>Grade</th>
+            <th>Course Name </th>
+            <th>
+              <a class="sorting" sort-by="student_name" sort-order="asc" href="javascript:void(0)">Student Name </a>
+            </th>
             <th>Exam Date </th>
-            <th>Certificate Date </th>
-            <th>Admission Date </th>
+            <th>Center Code </th>
+            <th>Center Name </th>
             <th>Action</th>
         </tr>
     </thead>
@@ -24,39 +21,23 @@
                         <p class="list-item-heading"><?php echo $i; ?></p>
                     </td>
                     <td>
-                        <img src="<?php echo base_url();?>assets/img/profiles/l-2.jpg" class="img-thumbnail border-0 rounded-circle list-thumbnail table_img">
+                        <p class="text-muted"><?= get_value($row,'course_name','-'); ?></p>
                     </td>
                     <td>
                         <p class="text-muted"><?= get_value($row,'student_name','-'); ?></p>
                     </td>
                     <td>
-                        <p class="text-muted"><?= get_value($row,'certificate_no','-'); ?></p>
+                        <p class="text-muted"><?= get_value($row,'exam_date','-'); ?></p>
                     </td>
                     <td>
-                        <p class="text-muted"><?= get_value($row,'mobile_no','-'); ?></p>
+                        <p class="text-muted"><?= get_value($row,'center_code','-'); ?></p>
                     </td>
                     <td>
-                        <p class="text-muted"><?= get_value($row,'username','-'); ?></p>
+                        <p class="text-muted"><?= get_value($row,'center_name','-'); ?></p>
                     </td>
                     <td>
-                        <p class="text-muted"><?= get_value($row,'password','-'); ?></p>
-                    </td>
-                    <td>
-                        <p class="text-muted"><?= get_value($row,'grade','-'); ?></p>
-                    </td>
-                    <td>
-                        <p class="text-muted"><?=format_date($row['exam_date'])?></p>
-                    </td>
-                    <td>
-                        <p class="text-muted"><?=format_date($row['certificate_date'])?></p>
-                    </td>
-                    <td>
-                        <p class="text-muted"><?=format_date($row['admission_date'])?></p>
-                    </td>
-                    <td>
-                        <a href="#" class="btn btn-xs btn-primary mb-1" onclick="edit_old_student_by_id('<?php echo $row['id']; ?>');"><i class="simple-icon-note"></i>
-                        </a>
-                        <a href="javascript:void(0);" class="btn btn-xs btn-warning mb-1"  onclick="delete_old_student_by_id('<?php echo $row['id']; ?>');"><i class="simple-icon-trash"></i></a>
+                        
+                        <a href="javascript:void(0);" class="btn btn-xs btn-warning mb-1"  onclick="delete_hall_tickets_by_id('<?php echo $row['id']; ?>');"><i class="simple-icon-trash"></i></a>
                         <!-- <a href="#" class="btn btn-xs btn-warning mb-1"><i class="simple-icon-trash"></i></a> -->
 
                     </td>

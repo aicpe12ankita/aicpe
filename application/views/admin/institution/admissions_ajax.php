@@ -4,13 +4,11 @@
             <th>Sr. No.</th>
             <th>Photo</th>
             <th>Student Name </th>
-            <th>Certificate No.</th>
-            <th>Mobile </th>
+            <th>Course & Duration</th>
             <th>Username</th>
             <th>Password</th>
-            <th>Grade</th>
-            <th>Exam Date </th>
-            <th>Certificate Date </th>
+            <th>Course Fees</th>
+            <th>Balance Fees </th>
             <th>Admission Date </th>
             <th>Action</th>
         </tr>
@@ -30,11 +28,9 @@
                         <p class="text-muted"><?= get_value($row,'student_name','-'); ?></p>
                     </td>
                     <td>
-                        <p class="text-muted"><?= get_value($row,'certificate_no','-'); ?></p>
+                        <p class="text-muted"><?= get_value($row,'course_duration','-'); ?></p>
                     </td>
-                    <td>
-                        <p class="text-muted"><?= get_value($row,'mobile_no','-'); ?></p>
-                    </td>
+                   
                     <td>
                         <p class="text-muted"><?= get_value($row,'username','-'); ?></p>
                     </td>
@@ -42,21 +38,18 @@
                         <p class="text-muted"><?= get_value($row,'password','-'); ?></p>
                     </td>
                     <td>
-                        <p class="text-muted"><?= get_value($row,'grade','-'); ?></p>
+                        <p class="text-muted"><?= currency_symbol_icon().currency_format(get_value($row,'course_fee','0.00')); ?></p>
                     </td>
                     <td>
-                        <p class="text-muted"><?=format_date($row['exam_date'])?></p>
+                        <p class="text-muted"><?= currency_symbol_icon().currency_format(get_value($row,'balance_fee','0.00')); ?></p>
                     </td>
-                    <td>
-                        <p class="text-muted"><?=format_date($row['certificate_date'])?></p>
-                    </td>
+                   
                     <td>
                         <p class="text-muted"><?=format_date($row['admission_date'])?></p>
                     </td>
                     <td>
-                        <a href="#" class="btn btn-xs btn-primary mb-1" onclick="edit_old_student_by_id('<?php echo $row['id']; ?>');"><i class="simple-icon-note"></i>
-                        </a>
-                        <a href="javascript:void(0);" class="btn btn-xs btn-warning mb-1"  onclick="delete_old_student_by_id('<?php echo $row['id']; ?>');"><i class="simple-icon-trash"></i></a>
+                        <a href="javascript:void(0);" class="btn btn-xs btn-primary mb-1" onclick="edit_admission_by_id(<?php echo $row['id']; ?>);"><i class="simple-icon-note"></i></a>
+                        <a href="javascript:void(0);" class="btn btn-xs btn-warning mb-1"  onclick="delete_admissions_by_id('<?php echo $row['id']; ?>');"><i class="simple-icon-trash"></i></a>
                         <!-- <a href="#" class="btn btn-xs btn-warning mb-1"><i class="simple-icon-trash"></i></a> -->
 
                     </td>

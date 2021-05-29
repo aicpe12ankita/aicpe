@@ -81,6 +81,8 @@
             </div>
         </div>
 </main>
+<div class="modal fade " id="edit_old_student" tabindex="-1" role="dialog" aria-labelledby="edit_old_student" aria-hidden="true" data-backdrop="static">
+ </div>
 
 <?php $this->load->view('admin/includes/footer'); ?>
 
@@ -278,6 +280,33 @@ function page_update()
                     toastr[response.type](response.msg);
                   }
               }
+         });
+ }
+ function edit_old_student_by_id(id){ 
+    $.ajax({
+              url: '<?php echo base_url(); ?>edit-institutions-old-students',
+              type:'post',
+              dataType: 'json',
+              data: {id:id},
+              
+              beforeSend: function()
+              {
+                $(".main-loader").show();
+              },      
+              success: function(data){
+                
+                  if(data.type=='success')
+                {
+                    $('#edit_old_student').html(data.html);
+                    $('#edit_old_student').modal('show'); 
+                }
+                else
+                {
+                    toastr['error']('Something went wrong! Please try again');
+                }
+              }
+
+                      
          });
  }
 
