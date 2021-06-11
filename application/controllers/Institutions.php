@@ -732,6 +732,7 @@ class Institutions extends MY_Controller{
         $message = json_encode(base_url().'uploads/temp/'.$filename);
         echo $message;
     }
+
     /*
     @Description : Edit Old Student Data
     @Author      : Varsha Wankhede
@@ -2881,12 +2882,398 @@ class Institutions extends MY_Controller{
         exit;
     }
 
+   	/*
+	@Description  : list of secret codes
+	@Author       : Varsha wankhede
+	@Date         : 31-05-2021
+	*/
+
 	public function secrete_codes(){
-		$this->load->view('admin/institution/secrete_codes');
+		
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+	
+		$data['data'] = $this->Institution_model->get_secrete_codes('data',$where_data);
+		
+		$data['total_records'] =  $this->Institution_model->get_secrete_codes('count',$where_data);
+		
+		 // Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-secrete-codes/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/secrete_codes',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/secret_codes_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+		//$this->load->view('admin/institution/secrete_codes');
 	}
+	public function delete_secrete_codes()
+    {  
+        $user_id          = $this->log_in_user_id;
+        $id               = $this->input->post('id');
+       
+        if($this->Institution_model->delete_secrete_codes($id,$user_id))
+        {
+            $message = array(
+                'type' => 'success',
+                'msg'  => 'Secrete Code deleted successfully'
+            );
+        }
+        else
+        {
+            $message = array(
+                'type' => 'error',
+                'msg'  => 'Something Went Wrong!'
+            );
+        }
+        echo json_encode($message);
+        exit;
+    }
+	public function secrete_codes_export()
+    {
+            
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+            "sort_by"        => $this->get_page_vars('sort_by', 'id'),
+            "sort_direction" => $this->get_page_vars('sort_direction', 'ASC'),
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_secrete_codes('data',$where_data);
+        
+        $filename  = 'Institutions_aicpe_secret_code'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        $header[] = 'Exam Secret Code';       
+        $header[] = 'Student ID';
+        $header[] = 'Student Name';        
+        $header[] = 'Mobile';
+        $header[] = 'Email';        
+        $header[] = 'Username';
+        $header[] = 'Password';
+        $header[] = 'Course & Duration';       
+        $header[] = 'Created On';
+        $header[] = 'Exam Status';
+        
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+                $rows   = array();
+               
+                $rows[] = get_value($row,'exam_secret_code','-');
+                $rows[] = get_value($row,'master_student_id','-');
+                $rows[] = get_value($row,'student_name','-');
+                $rows[] = get_value($row,'mobile_no','-');
+                $rows[] = get_value($row,'email','-');
+                $rows[] = get_value($row,'username','-');
+                $rows[] = get_value($row,'password','-');
+                $rows[] =  get_value($row,'course_duration','-');          
+                
+               
+                $rows[] = format_date($row['inserted_date']);
+                $rows[] =  $row['exam_status'] =='0' ? 'Enable' : 'Disable';
+              
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'AICPE Secrete Codes');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+     /*
+    @Description : Edit Old Student Data
+    @Author      : Varsha Wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 6-05-2021
+    */
+
+    public function edit_secrete_codes()
+    {
+        $id =  $this->input->post('id');
+
+    	$message = array(
+                    'type' => 'error',
+                    'msg'  => 'Something went wrong!'
+                );
+        
+
+        if(isset($id) && $id != '')
+        {
+
+        	$student_data = $this->Institution_model->edit_secret_code_modal($id);
+
+        	$data['student_data'] = isset($student_data[0]) && count($student_data[0]) > 0 ? $student_data[0] : array();
+        	$html =  parent::s_render('admin/institution/edit_secret_code_modal',$data,true);
+             
+             $message = array('type'=>'success',
+             	'html'=>$html
+         		);
+        }
+       
+        echo json_encode($message);
+    }
+    public function save_secrete_codes()
+	{
+		
+		$post_data = $this->input->post(); 
+		//pr($post_data); 
+		$response = array('type'=>'error','msg'=>'Something went wrong! Please try again.');
+
+		$update_array = array();
+
+		if(!empty($this->input->post('id')) && $this->input->post('id') !== '')
+		{
+			$update_array = array(
+				
+				'exam_secret_code' => is_not_empty($post_data['exam_secret_code']) ? $post_data['exam_secret_code'] : '',
+				
+				
+			);
+			
+			$where_data = array(
+				'id' => $post_data['id'],						
+			); 
+
+			if(count($update_array)>0)
+			{
+				$this->common_model->update_by_where_array('aicpe_exam_secret_code',$where_data,$update_array);
+
+				$response = array('type'=>'success','msg'=>'Student Secrete codes updated successfully.');
+			}
+
+			
+		}
+		
+		echo json_encode($response);
+	}
+	/*
+	@Description  : paper based exam
+	@Author       : varsha wankhede
+	@Date         : 7-06-2021
+	*/
+
 
 	public function paper_based_exam(){
-		$this->load->view('admin/institution/paper_based_exam');
+		
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+	
+		$data['data'] = $this->Institution_model->get_paper_based_exam('data',$where_data);
+		
+		$data['total_records'] =  $this->Institution_model->get_paper_based_exam('count',$where_data);
+		
+		 // Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-paper-based-exam/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/paper_based_exam',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/paper_based_exam_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+
+		//$this->load->view('admin/institution/paper_based_exam');
+	}
+	/*
+	@Description  :  delete paper based exam list
+	@Author       : Varsha wankhede
+	@Date         : 7-06-2021
+	*/
+
+	public function delete_paper_based_exam()
+    {  
+        $user_id          = $this->log_in_user_id;
+        $id               = $this->input->post('id');
+        
+        if($this->Institution_model->delete_paper_based_exam($id,$user_id))
+        {
+            $message = array(
+                'type' => 'success',
+                'msg'  => 'Paper based exam deleted successfully'
+            );
+        }
+        else
+        {
+            $message = array(
+                'type' => 'error',
+                'msg'  => 'Something Went Wrong!'
+            );
+        }
+        echo json_encode($message);
+        exit;
+    }
+    /*
+    @Description : export paper based exam
+    @Author      : Varsha wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 8-06-2021
+	*/
+	public function paper_based_exam_export()
+    {
+            
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+            "sort_by"        => $this->get_page_vars('sort_by', 'id'),
+            "sort_direction" => $this->get_page_vars('sort_direction', 'ASC'),
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_paper_based_exam('data',$where_data);
+        
+        $filename  = 'Institutions_aicpe_paper_based_exam'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        $header[] = 'Student ID	';
+        $header[] = 'Student Name';
+        $header[] = 'Course & Duration';
+        $header[] = 'Username';
+        $header[] = 'Password';
+        $header[] = 'Question paper';
+        $header[] = 'Exam status';
+        
+        
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+                $rows   = array();
+               
+                $rows[] = get_value($row,'student_id','-');
+                $rows[] = get_value($row,'student_name','-');
+                $rows[] = get_value($row,'course_duration','-');
+                $rows[] = get_value($row,'username','-');
+                $rows[] = get_value($row,'password','-');
+                $rows[] = get_value($row,'question_bank_id','-');   
+                $rows[] =  $row['status'] =='0' ? 'Appeared' : 'Disappeared';
+              
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'AICPE Paper based exam');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+    /*
+    @Author      : Varsha Wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 27-05-2021
+    */
+
+    public function edit_paper_based_exam()
+    {
+        $id =  $this->input->post('id');
+       
+    	$message = array(
+                    'type' => 'error',
+                    'msg'  => 'Something went wrong!'
+                );
+   
+        if(isset($id) && $id != '')
+        {        	
+        	$student_data = $this->Institution_model->edit_paper_based_exam_modal($id);
+
+        	$data['student_data'] = isset($student_data[0]) && count($student_data[0]) > 0 ? $student_data[0] : array();
+        	$html =  parent::s_render('admin/institution/edit_paper_based_exam_modal',$data,true);
+             
+             $message = array('type'=>'success',
+             	'view'=>$html
+         		);
+        }
+       
+        echo json_encode($message);
+    }
+    public function save_paper_based_exam()
+	{
+		
+		$post_data = $this->input->post();  
+		$response = array('type'=>'error','msg'=>'Something went wrong! Please try again.');
+
+		$update_array = array();
+
+		if(!empty($this->input->post('id')) && $this->input->post('id') !== '')
+		{
+			$update_array = array(
+				'status' => is_not_empty($post_data['status']) ? $post_data['status'] : '0',
+			);
+			//pr($update_array);
+			
+			$where_data = array(
+				'id' => $post_data['id'],						
+			); 
+
+			if(count($update_array)>0)
+			{
+				$this->common_model->update_by_where_array('aicpe_paper_based_exam',$where_data,$update_array);
+
+				$response = array('type'=>'success','msg'=>'Paper based exam updated successfully.');
+			}
+			
+		}
+		
+		echo json_encode($response);
 	}
 
 	public function offline_exam(){

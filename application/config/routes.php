@@ -121,16 +121,46 @@ $route['institutions-enquiries-export']['post'] = 'Institutions/export_enquiry';
 $route['institutions-enquiries/(:num)']= 'Institutions/enquiries/$1';
 
 $route['institutions-admissions']= 'Institutions/admissions';
+$route['delete-institutions-admissions']['post']= 'Institutions/delete_admissions';
+$route['institutions-admissions/(:num)']= 'Institutions/admissions/$1';
+$route['export-institutions-admissions']['post']= 'Institutions/admissions_export';
+$route['edit-institutions-admissions']= 'Institutions/edit_admissions';
+$route['save-institutions-admissions']['post']= 'Institutions/save_admissions';
+
 $route['institutions-old-students']= 'Institutions/old_students';
 $route['delete-institutions-old-students']['post']= 'Institutions/delete_old_student';
 $route['institutions-old-students/(:num)']= 'Institutions/old_students/$1';
 $route['export-institutions-old-students']['post']= 'Institutions/old_students_export';
+$route['edit-institutions-old-students']= 'Institutions/edit_old_students';
+$route['save-institutions-old-students']['post']= 'Institutions/save_old_students';
+
 
 $route['institutions-dropout-students']= 'Institutions/dropout_students';
+$route['delete-institutions-dropout-students']['post']= 'Institutions/delete_dropout_students';
+$route['institutions-dropout-students/(:num)']= 'Institutions/dropout_students/$1';
+$route['export-institutions-dropout-students']['post']= 'Institutions/dropout_students_export';
+$route['edit-institutions-dropout-students']= 'Institutions/edit_dropout_students';
+$route['save-institutions-dropout-students']= 'Institutions/save_dropout_students';
+
+
+
 $route['institutions-register-student']= 'Institutions/add_student';
+
 $route['institutions-payments']= 'Institutions/payments';
+//$route['delete-institutions-payments']['post']= 'Institutions/delete_payments';
+$route['institutions-payments/(:num)']= 'Institutions/payments/$1';
+$route['export-institutions-payments']['post']= 'Institutions/payments_export';
+$route['get-institutions-payments-history']['post']= 'Institutions/get_payments_history';
+
 $route['institutions-assignments']= 'Institutions/assignments';
+
+
 $route['institutions-aicpe-world-membership']= 'Institutions/aicpe_world_membership';
+$route['delete-institutions-aicpe-world-membership']['post']= 'Institutions/delete_aicpe_world_membership';
+$route['institutions-aicpe-world-membership/(:num)']= 'Institutions/aicpe_world_membership/$1';
+$route['export-institutions-aicpe-world-membership']['post']= 'Institutions/aicpe_world_membership_export';
+
+
 $route['institutions-courses']= 'Institutions/all_courses';
 $route['institutions-courses/(:num)']= 'Institutions/all_courses/$1';
 $route['export-institution-courses']['post']= 'Institutions/all_courses_export';
@@ -191,9 +221,31 @@ $route['institutions-download-question-bank']= 'Institutions/download_question_b
 
 $route['institutions-role-management']= 'Institutions/role_management';
 $route['institutions-exam-status']= 'Institutions/exam_status';
+$route['institutions-exam-status/(:num)']= 'Institutions/exam_status/$1';
+$route['delete-institutions-exam-status']= 'Institutions/delete_exam_status';
+$route['export-institutions-exam-status']= 'Institutions/exam_status_export';
+$route['edit-institutions-exam-status']= 'Institutions/edit_exam_status';
+$route['save-institutions-exam-status']= 'Institutions/save_exam_status';
+
 $route['institutions-hall-tickets']= 'Institutions/hall_tickets';
+$route['institutions-hall-tickets/(:num)']= 'Institutions/hall_tickets/$1';
+$route['export-institutions-hall-tickets']['post']= 'Institutions/hall_tickets_export';
+$route['delete-institutions-hall-tickets']= 'Institutions/delete_hall_tickets';
+
 $route['institutions-secrete-codes']= 'Institutions/secrete_codes';
+$route['institutions-secrete-codes/(:num)']= 'Institutions/secrete_codes/$1';
+$route['delete-institutions-secrete-codes']['post']= 'Institutions/delete_secrete_codes';
+$route['export-institutions-secrete-codes']= 'Institutions/secrete_codes_export';
+$route['edit-institutions-secrete-codes']['post']= 'Institutions/edit_secrete_codes';
+$route['save-institutions-secrete-codes']= 'Institutions/save_secrete_codes';
+
 $route['institutions-paper-based-exam']= 'Institutions/paper_based_exam';
+$route['institutions-paper-based-exam/(:num)']= 'Institutions/paper_based_exam/$1';
+$route['delete-institutions-paper-based-exam']= 'Institutions/delete_paper_based_exam';
+$route['export-institutions-paper-based-exam']= 'Institutions/paper_based_exam_export';
+$route['edit-institutions-paper-based-exam']= 'Institutions/edit_paper_based_exam';
+$route['save-institutions-paper-based-exam']= 'Institutions/save_paper_based_exam';
+
 $route['institutions-offline-exam']= 'Institutions/offline_exam';
 $route['institutions-bulk-registration']= 'Institutions/bulk_registration';
 $route['institutions-certificates']= 'Institutions/certificates';

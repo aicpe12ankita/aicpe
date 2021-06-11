@@ -3,15 +3,14 @@
         <tr>
             <th>Sr. No.</th>
             <th>Photo</th>
+            <th>Student ID</th>
             <th>Student Name </th>
-            <th>Certificate No.</th>
-            <th>Mobile </th>
+            <th>Course & Duration</th>
             <th>Username</th>
             <th>Password</th>
-            <th>Grade</th>
-            <th>Exam Date </th>
-            <th>Certificate Date </th>
-            <th>Admission Date </th>
+            <th>Question paper</th>
+            <th>Answer Paper</th>
+            <th>Exam status </th>
             <th>Action</th>
         </tr>
     </thead>
@@ -27,14 +26,14 @@
                         <img src="<?php echo base_url();?>assets/img/profiles/l-2.jpg" class="img-thumbnail border-0 rounded-circle list-thumbnail table_img">
                     </td>
                     <td>
+                        <p class="text-muted"><?= get_value($row,'student_id','-'); ?></p>
+                    </td><td>
                         <p class="text-muted"><?= get_value($row,'student_name','-'); ?></p>
                     </td>
                     <td>
-                        <p class="text-muted"><?= get_value($row,'certificate_no','-'); ?></p>
+                        <p class="text-muted"><?= get_value($row,'course_duration','-'); ?></p>
                     </td>
-                    <td>
-                        <p class="text-muted"><?= get_value($row,'mobile_no','-'); ?></p>
-                    </td>
+                   
                     <td>
                         <p class="text-muted"><?= get_value($row,'username','-'); ?></p>
                     </td>
@@ -42,21 +41,22 @@
                         <p class="text-muted"><?= get_value($row,'password','-'); ?></p>
                     </td>
                     <td>
-                        <p class="text-muted"><?= get_value($row,'grade','-'); ?></p>
+                        <p class="text-muted"><?= get_value($row,'question_bank_id','-'); ?></p>
                     </td>
                     <td>
-                        <p class="text-muted"><?=format_date($row['exam_date'])?></p>
+                        <p class="text-muted"><?=get_value($row,'question_bank_id','-'); ?></p>
+                    </td>
+                   
+                    <td>
+                       <?php if($row['status']== '0'){?>
+                        <p class="text-muted">Appeared</p>
+                        <?php } else {?>
+                        <p class="text-muted">Disppeared</p>
+                    <?php } ?>
                     </td>
                     <td>
-                        <p class="text-muted"><?=format_date($row['certificate_date'])?></p>
-                    </td>
-                    <td>
-                        <p class="text-muted"><?=format_date($row['admission_date'])?></p>
-                    </td>
-                    <td>
-                        <a href="#" class="btn btn-xs btn-primary mb-1" onclick="edit_old_student_by_id('<?php echo $row['id']; ?>');"><i class="simple-icon-note"></i>
-                        </a>
-                        <a href="javascript:void(0);" class="btn btn-xs btn-warning mb-1"  onclick="delete_old_student_by_id('<?php echo $row['id']; ?>');"><i class="simple-icon-trash"></i></a>
+                        <a href="javascript:void(0);" class="btn btn-xs btn-primary mb-1" onclick="edit_paper_based_exam_by_id(<?= $row['id']?>);"><i class="simple-icon-note"></i></a>
+                        <a href="javascript:void(0);" class="btn btn-xs btn-warning mb-1"  onclick="delete_paper_based_exam_id(<?= $row['id']?>);"><i class="simple-icon-trash"></i></a>
                         <!-- <a href="#" class="btn btn-xs btn-warning mb-1"><i class="simple-icon-trash"></i></a> -->
 
                     </td>
@@ -66,7 +66,11 @@
                     { ?>
                         <tr><td colspan="100%" style="text-align:center">No Records Found.</td></tr>
                     <?php   }
-                    ?><div class="col-12 text-left">
+                    ?>
+                </tbody>
+            </table>
+
+            <div class="col-12 text-left">
                 <?php if($total_records > 0) { ?>
                     Showing <?php echo $from_records; ?> to <?php echo $to_records; ?> of <?php echo $total_records; ?>
                 <?php } else echo '&nbsp'; ?>
@@ -83,7 +87,3 @@
 
             </div>
             <!-- END PAGINATION --> 
-                </tbody>
-            </table>
-
-            

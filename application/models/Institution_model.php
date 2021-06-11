@@ -1928,4 +1928,327 @@ class Institution_model extends CI_Model
         }
         pr($this->db->last_query());
     }
+    public function get_secrete_codes($type="data",$where_data)
+	{
+		$table = "aicpe_exam_secret_code";
+
+		if($type=='data')
+		{
+			$this->db->select(array(
+				'aicpe_exam_secret_code.id',
+				'aicpe_exam_secret_code.student_id as primary_student_id',
+				'aicpe_student.student_name',
+				'aicpe_student.email',
+				'aicpe_student.student_id as master_student_id',
+				'aicpe_student.mobile_no',
+				'aicpe_student.course_duration',
+				'aicpe_student.username',
+				'aicpe_student.password',
+				'aicpe_exam_secret_code.exam_secret_code',
+				'aicpe_exam_secret_code.inserted_date',
+				'aicpe_exam_status.status as exam_status'
+			));
+		}
+		else
+		{			
+			$this->db->select('aicpe_exam_secret_code.id');		
+		}
+		
+		$this->db->from($table);
+		$this->db->where('aicpe_exam_secret_code.is_deleted',"0");
+		
+		$this->db->join('aicpe_student','aicpe_exam_secret_code.student_id=aicpe_student.id','Left');
+		$this->db->join('aicpe_exam_status','aicpe_exam_secret_code.student_id=aicpe_student.id','Left');
+		//searching
+		if(isset($where_data['search']) && $where_data['search'] != '')
+		{	
+			$this->db->group_start();
+			$this->db->like('aicpe_student.student_name', addslashes($where_data['search']));
+			$this->db->or_like('aicpe_exam_secret_code.exam_secret_code', addslashes($where_data['search']));					
+			$this->db->group_end();
+		}
+
+		if(isset($where_data['start_date']) && $where_data['start_date'] !='')
+		{
+			$this->db->where('aicpe_exam_secret_code.inserted_date >=', $where_data['start_date'].' 00:00:00');
+		
+		}	
+		if(isset($where_data['end_date']) && $where_data['end_date'] !='')
+		{
+			$this->db->where('aicpe_exam_secret_code.inserted_date <=', $where_data['end_date'].' 23:59:59');
+		}	
+
+
+		//pagination and sorting
+		if(isset($where_data['per_page']) && $type == 'data')
+		{
+			$limit = $where_data['per_page'];
+
+			if($where_data['page'] != 0)
+			{
+				$page = --$where_data['page'];
+			}
+			else
+			{
+				$page = $where_data['page'];
+			}
+
+			$this->db->limit($limit, $page*$limit);
+		}
+
+
+		if(isset($where_data['sort_by']) && $type == 'data')
+		{
+			// Set sorting
+			if($where_data['sort_by'] != '' && $where_data['sort_direction'] != '')
+			{		
+
+				if(in_array($where_data['sort_by'], array('student_name','mobile_no','username','password','status')))
+				{
+					$this->db->order_by('aicpe_student.'.$where_data['sort_by'],$where_data['sort_direction']);
+					
+				}
+				elseif(in_array($where_data['sort_by'],array('exam_secret_code','inserted_date')))
+				{
+					$this->db->order_by('aicpe_exam_secret_code.'.$where_data['sort_by'],$where_data['sort_direction']);
+				}
+				else
+				{
+					// Set default sorting
+					$this->db->order_by('aicpe_exam_secret_code.inserted_date','desc');
+				}
+			}
+			else
+			{
+				// Set default sorting
+				$this->db->order_by('aicpe_exam_secret_code.inserted_date','desc');
+			}
+		}
+		
+		$this->db->group_by('aicpe_exam_secret_code.id');
+		
+		// If data is required
+		if($type == 'data')
+		{
+			$result = $this->db->get()->result_array();			
+		}   
+		else
+		{
+			$result = $this->db->get()->num_rows();			
+		}
+		
+		return $result;	
+		
+		
+	}
+	public function delete_secrete_codes($id,$user_id)
+    {
+        $data = array(
+            'is_deleted'    => '1',
+            //'is_active'    => '0',
+            'modified_by'   => $user_id,
+            'modified_date' => get_inserted_date_time()
+            );
+
+        if(is_array($id))
+        {
+            $this->db->where_in('id',$id);
+        }
+        else
+        {
+            $this->db->where('id',$id);
+        }
+
+        if($this->db->update('aicpe_exam_secret_code',$data))
+        {
+            return TRUE;
+        }
+        else
+        {
+            return FALSE;
+        }
+        //pr($this->db->last_query());
+    }
+     /*
+	@Description 	: edit secret code
+	@Author 		: varsha wankhede
+	@input 			: 
+	@Output 		: 
+	@Date 			: 6-07-2021
+	*/
+
+    public function edit_secret_code_modal($id='')
+	{
+		$result = array();
+
+		if(isset($id) && $id !=='')
+		{
+			$this->db->select(array(
+				'aicpe_exam_secret_code.*',
+				'aicpe_student.student_name
+',
+				
+			));
+
+			 $this->db->from('aicpe_exam_secret_code');
+
+			 	$this->db->join('aicpe_student','aicpe_student.id=aicpe_exam_secret_code.student_id','left');
+				$this->db->where('aicpe_exam_secret_code.student_id', $id);
+			
+			$result = $this->db->get()->result_array();
+		}
+
+		return $result;  
+	}
+	 /*
+	@Description 	: List of paper based exams
+	@Author 		: varsha wankhede
+	@input 			: 
+	@Output 		: 
+	@Date 			: 7-06-2021
+	*/
+
+	public function get_paper_based_exam($type="data",$where_data)
+	{
+		$table = "aicpe_paper_based_exam";
+		$result = array();
+		if($type=='data')
+		{
+			$this->db->select(array(
+				'aicpe_paper_based_exam.*',
+				'aicpe_student.student_id',
+				'aicpe_student.student_name',
+				'aicpe_student.course_duration',
+				'aicpe_student.username',
+				'aicpe_student.password',
+
+			));   
+		}
+		else
+		{			
+			$this->db->select('aicpe_paper_based_exam.id');		
+		}
+		
+		$this->db->from($table);
+		$this->db->join('aicpe_student','aicpe_student.id=aicpe_paper_based_exam.student_id','left');
+
+		$this->db->where('aicpe_paper_based_exam.status','0');
+		$this->db->where('aicpe_paper_based_exam.is_deleted','0');
+		//$this->db->where('aicpe_paper_based_exam.student_id', $id);
+			
+		if(isset($where_data['search']) && $where_data['search'] != '')
+		{	
+			$this->db->group_start();
+			$this->db->like('student_name', addslashes($where_data['search']));
+								
+			$this->db->group_end();
+		}
+
+		if(isset($where_data['start_date']) && $where_data['start_date'] !='')
+		{
+			$this->db->where('aicpe_paper_based_exam.inserted_date >=', $where_data['start_date'].' 00:00:00');
+		
+		}	
+		if(isset($where_data['end_date']) && $where_data['end_date'] !='')
+		{
+			$this->db->where('aicpe_paper_based_exam.inserted_date <=', $where_data['end_date'].' 23:59:59');
+		}		
+
+
+		//pagination and sorting
+		if(isset($where_data['per_page']) && $type == 'data')
+		{
+			if($where_data['sort_by'] != '' && $where_data['sort_direction'] != '')
+			{		
+
+				if(in_array($where_data['sort_by'], array('student_name','mobile_no','username','password','status')))
+				{
+					$this->db->order_by('aicpe_paper_based_exam.'.$where_data['sort_by'],$where_data['sort_direction']);
+					
+				}
+				elseif(in_array($where_data['sort_by'],array('exam_secret_code','inserted_date')))
+				{
+					$this->db->order_by('aicpe_paper_based_exam.'.$where_data['sort_by'],$where_data['sort_direction']);
+				}
+				else
+				{
+					// Set default sorting
+					$this->db->order_by('aicpe_paper_based_exam.inserted_date','desc');
+				}
+			}
+			else
+			{
+				// Set default sorting
+				$this->db->order_by('aicpe_paper_based_exam.inserted_date','desc');
+			}
+		}
+		$this->db->group_by('aicpe_paper_based_exam.id');
+		// If data is required
+		if($type == 'data')
+		{
+			$result = $this->db->get()->result_array();			
+		}   
+		else
+		{
+			$result = $this->db->get()->num_rows();			
+		}
+		//pr($this->db->last_query());
+		return $result;	
+	}
+	public function delete_paper_based_exam($id,$user_id)
+    {
+        $data = array(
+            'is_deleted'    => '1',
+            //'is_active'    => '0',
+            'modified_by'   => $user_id,
+            'modified_date' => get_inserted_date_time()
+            );
+
+        if(is_array($id))
+        {
+            $this->db->where_in('id',$id);
+        }
+        else
+        {
+            $this->db->where('id',$id);
+        }
+
+        if($this->db->update('aicpe_paper_based_exam',$data))
+        {
+            return TRUE;
+        }
+        else
+        {
+            return FALSE;
+        }
+    }
+ public function edit_paper_based_exam_modal($id='')
+	{
+		$result = array();
+
+		if(isset($id) && $id !=='')
+		{
+			$this->db->select(array(
+				'aicpe_paper_based_exam.*',
+				'aicpe_student.student_id ',
+				'aicpe_student.student_name',
+				'aicpe_student.username',
+				'aicpe_student.password',
+				'aicpe_student.course_duration',
+				'aicpe_student.status',
+
+				
+			));
+
+			 $this->db->from('aicpe_paper_based_exam');
+
+			 	$this->db->join('aicpe_student','aicpe_student.id=aicpe_paper_based_exam.student_id','left');
+				$this->db->where('aicpe_paper_based_exam.student_id', $id);
+			
+			$result = $this->db->get()->result_array();
+		}
+
+		return $result;  
+	}
+	
 }
