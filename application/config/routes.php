@@ -153,6 +153,10 @@ $route['export-institutions-payments']['post']= 'Institutions/payments_export';
 $route['get-institutions-payments-history']['post']= 'Institutions/get_payments_history';
 
 $route['institutions-assignments']= 'Institutions/assignments';
+$route['institutions-assignments/(:num)']= 'Institutions/assignments/$1';
+$route['export-institutions-assignments']= 'Institutions/assignments_export';
+$route['edit-institutions-assignments']= 'Institutions/edit_assignments';
+$route['save-institutions-assignments']['post']= 'Institutions/save_assignments';
 
 
 $route['institutions-aicpe-world-membership']= 'Institutions/aicpe_world_membership';
@@ -196,8 +200,19 @@ $route['institutions-library-books-issued']= 'Institutions/library_books_issued'
 $route['institutions-library-books-return']= 'Institutions/library_books_return';
 $route['institutions-library-books-fine']= 'Institutions/library_books_fine';
 $route['institutions-library-e-books']= 'Institutions/library_e_books';
+
 $route['institutions-staff-list']= 'Institutions/staff_list';
+$route['institutions-staff-list/(:num)']= 'Institutions/staff_list/$1';
+$route['export-institutions-staff-list']['post']= 'Institutions/staff_list_export';
+$route['delete-institutions-staff-list']['post']= 'Institutions/delete_staff_list';
+$route['edit-institutions-staff-list']= 'Institutions/edit_staff_list';
+
 $route['institutions-staff-incentives']= 'Institutions/staff_incentives';
+$route['institutions-staff-incentives/(:/num)']= 'Institutions/staff_incentives/$1';
+$route['export-institutions-staff-incentives']= 'Institutions/staff_incentives_export';
+$route['edit-institutions-staff-incentives']= 'Institutions/edit_staff_incentives';
+$route['delete-institutions-staff-incentives']= 'Institutions/delete_staff_incentives';
+
 $route['institutions-staff-tasks']= 'Institutions/staff_tasks';
 $route['institutions-wallet']= 'Institutions/wallet';
 $route['institutions-sms-management']= 'Institutions/sms_management';
@@ -243,13 +258,18 @@ $route['institutions-paper-based-exam']= 'Institutions/paper_based_exam';
 $route['institutions-paper-based-exam/(:num)']= 'Institutions/paper_based_exam/$1';
 $route['delete-institutions-paper-based-exam']= 'Institutions/delete_paper_based_exam';
 $route['export-institutions-paper-based-exam']= 'Institutions/paper_based_exam_export';
-$route['edit-institutions-paper-based-exam']= 'Institutions/edit_paper_based_exam';
+$route['edit-institutions-paper-based-exam']['post']= 'Institutions/edit_paper_based_exam';
 $route['save-institutions-paper-based-exam']= 'Institutions/save_paper_based_exam';
 
 $route['institutions-offline-exam']= 'Institutions/offline_exam';
+$route['export-institutions-offline-exam']= 'Institutions/offline_exam_export';
+
 $route['institutions-bulk-registration']= 'Institutions/bulk_registration';
 $route['institutions-certificates']= 'Institutions/certificates';
+
 $route['institutions-participation-certificates']= 'Institutions/participation_certificates';
+$route['export-institutions-participation-certificates']= 'Institutions/participation_certificates_export';
+
 $route['getenqList']= 'Institutions/enquiriesList';
 /*--------------------------------------------admin routes start here-------------------------*/
 

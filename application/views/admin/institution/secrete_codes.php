@@ -67,17 +67,16 @@
                                         </div>
                                       </div> -->
                                        <div class="col-lg-3 float-md-right">
-                        <div class="form-group">
-                            
-                            <div class="select-style">
-                                <select class="form-control " id="per_page_option" name="per_page_option">
-                                    <?php foreach ($per_page_option as $key => $value){ ?>
-                                        <option <?php echo $per_page==$value?"selected":""; ?> value="<?php echo $key;?>"><?php echo $value;?></option>
-                                    <?php } ?>
-                                </select>
-                            </div>
-                        </div> 
-                      </div>
+                                            <div class="form-group">
+                                                <div class="select-style">
+                                                    <select class="form-control " id="per_page_option" name="per_page_option">
+                                                        <?php foreach ($per_page_option as $key => $value){ ?>
+                                                            <option <?php echo $per_page==$value?"selected":""; ?> value="<?php echo $key;?>"><?php echo $value;?></option>
+                                                        <?php } ?>
+                                                    </select>
+                                                </div>
+                                            </div> 
+                                      </div>
                                     </div>
 
                                   </div>

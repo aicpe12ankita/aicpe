@@ -2250,5 +2250,528 @@ class Institution_model extends CI_Model
 
 		return $result;  
 	}
-	
+	 /*
+	@Description 	: List of offline exams
+	@Author 		: varsha wankhede
+	@input 			: 
+	@Output 		: 
+	@Date 			: 11-06-2021
+	*/
+
+	public function get_offline_exam($type="data",$where_data)
+	{
+		$table = "aicpe_student";
+		$result = array();
+		if($type=='data')
+		{
+			$this->db->select(array(
+				'aicpe_student.student_id',
+				'aicpe_student.student_name',
+				'aicpe_student.course_duration',
+				'aicpe_exam_status.available_exam_mode',
+				'aicpe_paper_based_exam.status',
+
+			));   
+		}
+		else
+		{			
+			$this->db->select('aicpe_student.id');		
+		}
+		
+		$this->db->from($table);
+		$this->db->join('aicpe_exam_status','aicpe_student.id=aicpe_exam_status.student_id','left');
+		$this->db->join('aicpe_paper_based_exam','aicpe_student.id=aicpe_paper_based_exam.student_id','left');
+
+			
+		if(isset($where_data['search']) && $where_data['search'] != '')
+		{	
+			$this->db->group_start();
+			$this->db->like('student_name', addslashes($where_data['search']));
+								
+			$this->db->group_end();
+		}
+
+		if(isset($where_data['start_date']) && $where_data['start_date'] !='')
+		{
+			$this->db->where('aicpe_student.inserted_date >=', $where_data['start_date'].' 00:00:00');
+		
+		}	
+		if(isset($where_data['end_date']) && $where_data['end_date'] !='')
+		{
+			$this->db->where('aicpe_student.inserted_date <=', $where_data['end_date'].' 23:59:59');
+		}		
+
+
+		//pagination and sorting
+		if(isset($where_data['per_page']) && $type == 'data')
+		{
+			if($where_data['sort_by'] != '' && $where_data['sort_direction'] != '')
+			{		
+
+				if(in_array($where_data['sort_by'], array('student_name','course_duration','student_id')))
+				{
+					$this->db->order_by('aicpe_student.'.$where_data['sort_by'],$where_data['sort_direction']);
+					
+				}
+				elseif(in_array($where_data['sort_by'],array('student_name','inserted_date')))
+				{
+					$this->db->order_by('aicpe_student.'.$where_data['sort_by'],$where_data['sort_direction']);
+				}
+				else
+				{
+					// Set default sorting
+					$this->db->order_by('aicpe_student.inserted_date','desc');
+				}
+			}
+			else
+			{
+				// Set default sorting
+				$this->db->order_by('aicpe_student.inserted_date','desc');
+			}
+		}
+		$this->db->group_by('aicpe_student.id');
+		// If data is required
+		if($type == 'data')
+		{
+			$result = $this->db->get()->result_array();			
+		}   
+		else
+		{
+			$result = $this->db->get()->num_rows();			
+		}
+		
+		return $result;	
+	}
+
+	 public function get_participation_certificates($type="data",$where_data)
+	{
+		$table = "aicpe_participation_certificate";
+
+		if($type=='data')
+		{
+			$this->db->select(array(
+				'aicpe_student.student_name',
+				'aicpe_student.email',
+				'aicpe_student.student_id',
+				'aicpe_student.mobile_no',
+				'aicpe_participation_certificate.qualification',
+				'aicpe_participation_certificate.session_title',
+				'aicpe_participation_certificate.venue',
+				'aicpe_participation_certificate.date_and_time',
+			));
+		}
+		else
+		{			
+			$this->db->select('aicpe_participation_certificate.id');		
+		}
+		
+		$this->db->from($table);
+		
+		$this->db->join('aicpe_student','aicpe_participation_certificate.student_id=aicpe_student.id','Left');
+		
+
+		//searching
+		if(isset($where_data['search']) && $where_data['search'] != '')
+		{	
+			$this->db->group_start();
+			$this->db->like('aicpe_student.student_name', addslashes($where_data['search']));
+			$this->db->or_like('aicpe_participation_certificate.qualification', addslashes($where_data['search']));					
+			$this->db->group_end();
+		}
+
+		if(isset($where_data['start_date']) && $where_data['start_date'] !='')
+		{
+			$this->db->where('aicpe_participation_certificate.inserted_date >=', $where_data['start_date'].' 00:00:00');
+		
+		}	
+		if(isset($where_data['end_date']) && $where_data['end_date'] !='')
+		{
+			$this->db->where('aicpe_participation_certificate.inserted_date <=', $where_data['end_date'].' 23:59:59');
+		}	
+
+
+		//pagination and sorting
+		if(isset($where_data['per_page']) && $type == 'data')
+		{
+			$limit = $where_data['per_page'];
+
+			if($where_data['page'] != 0)
+			{
+				$page = --$where_data['page'];
+			}
+			else
+			{
+				$page = $where_data['page'];
+			}
+
+			$this->db->limit($limit, $page*$limit);
+		}
+
+
+		if(isset($where_data['sort_by']) && $type == 'data')
+		{
+			// Set sorting
+			if($where_data['sort_by'] != '' && $where_data['sort_direction'] != '')
+			{		
+
+				if(in_array($where_data['sort_by'], array('student_name','mobile_no')))
+				{
+					$this->db->order_by('aicpe_student.'.$where_data['sort_by'],$where_data['sort_direction']);
+					
+				}
+				elseif(in_array($where_data['sort_by'],array('qualification','inserted_date')))
+				{
+					$this->db->order_by('aicpe_participation_certificate.'.$where_data['sort_by'],$where_data['sort_direction']);
+				}
+				else
+				{
+					// Set default sorting
+					$this->db->order_by('aicpe_participation_certificate.inserted_date','desc');
+				}
+			}
+			else
+			{
+				// Set default sorting
+				$this->db->order_by('aicpe_participation_certificate.inserted_date','desc');
+			}
+		}
+		
+		$this->db->group_by('aicpe_participation_certificate.id');
+		
+		// If data is required
+		if($type == 'data')
+		{
+			$result = $this->db->get()->result_array();			
+		}   
+		else
+		{
+			$result = $this->db->get()->num_rows();			
+		}
+		
+		return $result;	
+		
+		
+	}
+	 public function get_staff_management_list($type="data",$where_data)
+	{
+		$table = "aicpe_staff_managment";
+
+		if($type=='data')
+		{
+			$this->db->select(array(
+				'aicpe_staff_managment.*',
+			));
+		}
+		else
+		{			
+			$this->db->select('aicpe_staff_managment.id');		
+		}
+		
+		$this->db->from($table);
+		$this->db->where("aicpe_staff_managment.is_deleted","0");
+
+		//searching
+		if(isset($where_data['search']) && $where_data['search'] != '')
+		{	
+			$this->db->group_start();
+			$this->db->like('aicpe_staff_managment.staff_name', addslashes($where_data['search']));
+			$this->db->or_like('aicpe_staff_managment.staff_name', addslashes($where_data['search']));
+			$this->db->group_end();
+		}
+
+		if(isset($where_data['start_date']) && $where_data['start_date'] !='')
+		{
+			$this->db->where('aicpe_staff_managment.inserted_date >=', $where_data['start_date'].' 00:00:00');
+		
+		}	
+		if(isset($where_data['end_date']) && $where_data['end_date'] !='')
+		{
+			$this->db->where('aicpe_staff_managment.inserted_date <=', $where_data['end_date'].' 23:59:59');
+		}	
+
+
+		//pagination and sorting
+		if(isset($where_data['per_page']) && $type == 'data')
+		{
+			$limit = $where_data['per_page'];
+
+			if($where_data['page'] != 0)
+			{
+				$page = --$where_data['page'];
+			}
+			else
+			{
+				$page = $where_data['page'];
+			}
+
+			$this->db->limit($limit, $page*$limit);
+		}
+
+
+		if(isset($where_data['sort_by']) && $type == 'data')
+		{
+			// Set sorting
+			if($where_data['sort_by'] != '' && $where_data['sort_direction'] != '')
+			{		
+
+				if(in_array($where_data['sort_by'], array('staff_name','mobile_no')))
+				{
+					$this->db->order_by('aicpe_staff_managment.'.$where_data['sort_by'],$where_data['sort_direction']);
+					
+				}
+				elseif(in_array($where_data['sort_by'],array('staff_name','inserted_date')))
+				{
+					$this->db->order_by('aicpe_staff_managment.'.$where_data['sort_by'],$where_data['sort_direction']);
+				}
+				else
+				{
+					// Set default sorting
+					$this->db->order_by('aicpe_staff_managment.inserted_date','desc');
+				}
+			}
+			else
+			{
+				// Set default sorting
+				$this->db->order_by('aicpe_staff_managment.inserted_date','desc');
+			}
+		}
+		
+		$this->db->group_by('aicpe_staff_managment.id');
+		//pr($this->db->get_compiled_select());
+		// If data is required
+		if($type == 'data')
+		{
+			$result = $this->db->get()->result_array();			
+		}   
+		else
+		{
+			$result = $this->db->get()->num_rows();			
+		}
+		
+		
+		return $result;	
+		
+	}
+	public function delete_staff_list($id,$user_id)
+    {
+        $data = array(
+            'is_deleted'    => '1',
+            //'is_active'    => '0',
+            'modified_by'   => $user_id,
+            'modified_date' => get_inserted_date_time()
+            );
+
+        if(is_array($id))
+        {
+            $this->db->where_in('id',$id);
+        }
+        else
+        {
+            $this->db->where('id',$id);
+        }
+
+        if($this->db->update('aicpe_staff_managment',$data))
+        {
+            return TRUE;
+        }
+        else
+        {
+            return FALSE;
+        }
+    }
+    public function get_staff_incentives($type="data",$where_data)
+    {
+    	$table = "aicpe_staff_incentives";
+
+    	if($type == 'data')
+    	{
+
+    		$this->db->select(array(
+    			'aicpe_staff_incentives.*',
+    			'aicpe_staff_managment.staff_name',
+    			'aicpe_staff_managment.mobile_no',
+    			'aicpe_staff_managment.email',
+    		));
+    	}
+    	else
+    	{
+    		$this->db->select('aicpe_staff_incentives.id');
+    	}
+    	$this->db->from($table);
+    	$this->db->join('aicpe_staff_managment','aicpe_staff_managment.id = aicpe_staff_incentives.staff_id','Left');
+    	
+    //searching
+		if(isset($where_data['search']) && $where_data['search'] != '')
+		{	
+			$this->db->group_start();
+			$this->db->like('aicpe_staff_managment.staff_name', addslashes($where_data['search']));
+			$this->db->or_like('aicpe_staff_managment.email', addslashes($where_data['search']));					
+			$this->db->group_end();
+		}
+
+		if(isset($where_data['start_date']) && $where_data['start_date'] !='')
+		{
+			$this->db->where('aicpe_staff_incentives.inserted_date >=', $where_data['start_date'].' 00:00:00');
+		
+		}	
+		if(isset($where_data['end_date']) && $where_data['end_date'] !='')
+		{
+			$this->db->where('aicpe_staff_incentives.inserted_date <=', $where_data['end_date'].' 23:59:59');
+		}	
+
+
+		//pagination and sorting
+		if(isset($where_data['per_page']) && $type == 'data')
+		{
+			$limit = $where_data['per_page'];
+
+			if($where_data['page'] != 0)
+			{
+				$page = --$where_data['page'];
+			}
+			else
+			{
+				$page = $where_data['page'];
+			}
+
+			$this->db->limit($limit, $page*$limit);
+		}
+
+
+		if(isset($where_data['sort_by']) && $type == 'data')
+		{
+			// Set sorting
+			if($where_data['sort_by'] != '' && $where_data['sort_direction'] != '')
+			{		
+
+				if(in_array($where_data['sort_by'], array('incentive_pattern','incentive_amount')))
+				{
+					$this->db->order_by('aicpe_staff_incentives.'.$where_data['sort_by'],$where_data['sort_direction']);
+					
+				}
+				elseif(in_array($where_data['sort_by'],array('incentive_amount','inserted_date')))
+				{
+					$this->db->order_by('aicpe_staff_incentives.'.$where_data['sort_by'],$where_data['sort_direction']);
+				}
+				else
+				{
+					// Set default sorting
+					$this->db->order_by('aicpe_staff_incentives.inserted_date','desc');
+				}
+			}
+			else
+			{
+				// Set default sorting
+				$this->db->order_by('aicpe_staff_incentives.inserted_date','desc');
+			}
+		}
+		
+		// If data is required
+		if($type == 'data')
+		{
+			$result = $this->db->get()->result_array();	
+			//pr($this->db->last_query());		
+		}   
+		else
+		{
+			$result = $this->db->get()->num_rows();			
+		}
+		
+		return $result;	
+		
+	}
+	public function get_assignments($type="data",$where_data)
+    {
+    	$table = "aicpe_assignment";
+
+    	if($type == 'data')
+    	{
+    		$this->db->select(array(
+    			'aicpe_assignment.*',
+    		));
+    	}
+    	else
+    	{
+    		$this->db->select('aicpe_assignment.id');
+    	}
+    	$this->db->from($table);
+    	
+    //searching
+		if(isset($where_data['search']) && $where_data['search'] != '')
+		{	
+			$this->db->group_start();
+			$this->db->like('aicpe_assignment.course_name', addslashes($where_data['search']));
+			$this->db->or_like('aicpe_assignment.course_name', addslashes($where_data['search']));					
+			$this->db->group_end();
+		}
+
+		if(isset($where_data['start_date']) && $where_data['start_date'] !='')
+		{
+			$this->db->where('aicpe_assignment.inserted_date >=', $where_data['start_date'].' 00:00:00');
+		
+		}	
+		if(isset($where_data['end_date']) && $where_data['end_date'] !='')
+		{
+			$this->db->where('aicpe_assignment.inserted_date <=', $where_data['end_date'].' 23:59:59');
+		}	
+
+
+		//pagination and sorting
+		if(isset($where_data['per_page']) && $type == 'data')
+		{
+			$limit = $where_data['per_page'];
+
+			if($where_data['page'] != 0)
+			{
+				$page = --$where_data['page'];
+			}
+			else
+			{
+				$page = $where_data['page'];
+			}
+
+			$this->db->limit($limit, $page*$limit);
+		}
+
+
+		if(isset($where_data['sort_by']) && $type == 'data')
+		{
+			// Set sorting
+			if($where_data['sort_by'] != '' && $where_data['sort_direction'] != '')
+			{		
+
+				if(in_array($where_data['sort_by'], array('course_name','assignment_title')))
+				{
+					$this->db->order_by('aicpe_assignment.'.$where_data['sort_by'],$where_data['sort_direction']);
+					
+				}
+				elseif(in_array($where_data['sort_by'],array('course_name','inserted_date')))
+				{
+					$this->db->order_by('aicpe_assignment.'.$where_data['sort_by'],$where_data['sort_direction']);
+				}
+				else
+				{
+					// Set default sorting
+					$this->db->order_by('aicpe_assignment.inserted_date','desc');
+				}
+			}
+			else
+			{
+				// Set default sorting
+				$this->db->order_by('aicpe_assignment.inserted_date','desc');
+			}
+		}
+		
+		// If data is required
+		if($type == 'data')
+		{
+			$result = $this->db->get()->result_array();	
+		}   
+		else
+		{
+			$result = $this->db->get()->num_rows();			
+		}
+		
+		return $result;	
+	}
 }

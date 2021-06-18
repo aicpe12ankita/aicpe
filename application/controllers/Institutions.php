@@ -1179,7 +1179,250 @@ class Institutions extends MY_Controller{
     }
 
 	public function assignments(){
-		$this->load->view('admin/institution/assignments');
+
+		$data["per_page_option"] = $this->per_page_option;
+        $data["per_page"]        = $this->get_page_vars('per_page', 1);
+        $data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+        $data['search']          = $this->get_request_params('search','');
+        $data['start_date']      = $this->get_request_params('start_date','');
+        $data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+            "sort_by"        => $this->get_page_vars('sort_by', 'id'),
+            "sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+            "per_page"       => $data["per_page"],
+            "page"           => $this->get_page_vars('page', '', $this->page_segment),
+            "search"         => $data['search'],
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+          
+
+    	$data['course_array'] = array(
+    					'flexbox' => 'Flexbox',
+    					'saas' => 'Saas',
+    					'react' => 'React',
+    				);
+    	$data['assign_faculty'] = array(
+						'teaching' => 'Teaching',
+						'non_teaching' => 'Non-Teaching',
+						'sports' => 'Sports',
+    				);
+
+        $data['data'] =  $this->Institution_model->get_assignments('data',$where_data);
+        $data['total_records'] =  $this->Institution_model->get_assignments('count',$where_data);
+       
+        // Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-assignments/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 1),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/assignments',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/assignment_ajax',
+            'data'              => $data
+        );
+        $this->set_pagination($page_config);
+
+		//$this->load->view('admin/institution/assignments');
+	}
+	 public function assignments_export()
+    {
+        
+        $data["per_page"]   = $this->get_page_vars('per_page', 500);
+        $data["page"]       = $this->get_page_vars('page','',$this->page_segment);        
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+        $where_data =   array(
+            "sort_by"        => $this->get_page_vars('sort_by', 'id'),
+            "sort_direction" => $this->get_page_vars('sort_direction', 'ASC'),
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_assignments('data',$where_data);
+        
+        $filename  = 'Institutions_assignment'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        $header[] = 'Course Name';
+        $header[] = 'Assignment Title';
+        $header[] = 'Post Date';
+        $header[] = 'Submission Date';
+        $header[] = 'Faculty';
+        
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+                $rows   = array();
+               
+                $rows[] = get_value($row,'course_name');
+                $rows[] = get_value($row,'assignment_title'); 
+                $rows[] = format_date(get_value($row,'post_date'),'d/m/y');
+                $rows[] = format_date(get_value($row,'submission_date'),'d/m/y');
+                $rows[] = get_value($row,'faculty');
+              
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'AICPE Assignments');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+     /*
+    @Author      : Varsha Wankhede
+    @Input       : edit assignments
+    @Output      : 
+    @Date        : 17-06-2021
+    */
+
+    public function edit_assignments()
+    {
+        $id =  $this->input->post('id');
+       
+    	$message = array(
+                    'type' => 'error',
+                    'msg'  => 'Something went wrong!'
+                );
+
+    	$data['course_array'] = array(
+    					'flexbox' => 'Flexbox',
+    					'saas' => 'Saas',
+    					'react' => 'React',
+    				);
+    	$data['assign_faculty'] = array(
+						'teaching' => 'Teaching',
+						'non_teaching' => 'Non-Teaching',
+						'sports' => 'Sports',
+    				);
+    	
+        if(isset($id) && $id != '')
+        {        	
+        	$get_assignment_detail = $this->common_model->select_by_key('aicpe_assignment',array('id' =>$id));
+
+        	$data['record_key'] = $id;
+
+        	$data['student_data'] = isset($get_assignment_detail[0]) && count($get_assignment_detail[0]) > 0 ? $get_assignment_detail[0] : array();
+        	
+        	$html =  parent::s_render('admin/institution/edit_assignment_modal',$data,true);
+             
+             $message = array('type'=>'success',
+             	'view'=>$html
+         		);
+        }
+       
+        echo json_encode($message);
+    }
+     /*
+	@Description  : save assignment list
+	@Author       : Varsha wankhede
+	@Date         : 17-06-2021
+	*/
+
+   public function save_assignments()
+	{
+		$post_data = $this->input->post();  
+		
+		$response = array('type'=>'error','msg'=>'Something went wrong! Please try again.');
+
+		$update_array = array();
+		$assignment_document_file_path = '';
+		if(!empty($this->input->post('record_id')) && $this->input->post('record_id') !== '')
+		{
+			   if(!empty($_FILES['assignment_document']['name']))
+			   {
+                    $config['upload_path']      = "uploads/assignment_document";
+                    $config['allowed_types']    = "gif|jpg|png|jpeg";
+                    $config['encrypt_name']     =  true;
+                    $config['overwrite']        =  TRUE;
+                 
+                    $this->load->library('upload', $config);
+                    $this->upload->initialize($config);
+                    if(!$this->upload->do_upload('assignment_document'))
+                    {
+                        $error  = array('error'  => $this->upload->display_errors());
+                        
+                    }
+                    else
+                    {
+                        $assignment_document_file  = $this->upload->data('file_name');
+                        $assignment_document_file_path = $config['upload_path'].$assignment_document_file;
+                    }
+                }
+              
+			$update_array = array(
+				'course_name' => is_not_empty($post_data['course_name']) ? $post_data['course_name'] : '',
+				'assignment_title' => is_not_empty($post_data['assignment_title']) ? $post_data['assignment_title'] : '',
+				'description' => is_not_empty($post_data['description']) ? $post_data['description'] : '',
+				'submission_date' => isset($post_data['submission_date']) ? $post_data['submission_date'] : '',
+				'faculty' => is_not_empty($post_data['faculty']) ? $post_data['faculty'] : '',
+				'assignment_document' =>  $assignment_document_file_path,
+			);
+						
+			$where_data = array(
+				'id' => $post_data['record_id'],						
+			); 
+
+			if(count($update_array)>0)
+			{
+				$this->common_model->update_by_where_array('aicpe_assignment',$where_data,$update_array);
+
+				$response = array('type'=>'success','msg'=>'Assignment data updated successfully.');
+
+			}
+			
+		}
+		else
+		{
+			 if(!empty($_FILES['assignment_document']['name']))
+			   {
+                    $config['upload_path']      = "uploads/assignment_document";
+                    $config['allowed_types']    = "gif|jpg|png|jpeg";
+                    $config['encrypt_name']     =  true;
+                    $config['overwrite']        =  TRUE;
+                 
+                    $this->load->library('upload', $config);
+                    $this->upload->initialize($config);
+                    if(!$this->upload->do_upload('assignment_document'))
+                    {
+                        $error  = array('error'  => $this->upload->display_errors());
+                        
+                    }
+                    else
+                    {
+                        $assignment_document_file  = $this->upload->data('file_name');
+                        $assignment_document_file_path = $config['upload_path'].$assignment_document_file;
+                    }
+                }
+              
+			$insert_data = array(
+				'course_name' => is_not_empty($post_data['course_name']) ? $post_data['course_name'] : '',
+				'assignment_title' => is_not_empty($post_data['assignment_title']) ? $post_data['assignment_title'] : '',
+				'description' => is_not_empty($post_data['description']) ? $post_data['description'] : '',
+				'submission_date' => isset($post_data['submission_date']) ? $post_data['submission_date'] : '',
+				'faculty' => is_not_empty($post_data['faculty']) ? $post_data['faculty'] : '',
+				'assignment_document' =>  $assignment_document_file_path,
+			);
+
+			if(count($insert_data)>0)
+			{
+				$inserted_id = $this->common_model->insert_all('aicpe_assignment',$insert_data);
+				
+				$response = array('type'=>'success','msg'=>'Assignment added successfully.');
+			}
+		}
+		
+		echo json_encode($response);
 	}
 
 	public function all_courses_old(){
@@ -2096,11 +2339,209 @@ class Institutions extends MY_Controller{
 	}
 
 	public function staff_list(){
-		$this->load->view('admin/institution/staff_management');
-	}
+		
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
 
-	public function staff_incentives(){
-		$this->load->view('admin/institution/staff_incentives');
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+	
+		$data['data'] = $this->Institution_model->get_staff_management_list('data',$where_data);
+		
+		$data['total_records'] =  $this->Institution_model->get_staff_management_list('count',$where_data);
+		
+		 // Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-staff-list/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/staff_management',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/staff_management_list_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+		//$this->load->view('admin/institution/staff_management');
+	}
+	public function staff_list_export()
+    {
+        
+        $data["per_page"]   = $this->get_page_vars('per_page', 500);
+        $data["page"]       = $this->get_page_vars('page','',$this->page_segment);        
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+        $where_data =   array(
+            "sort_by"        => $this->get_page_vars('sort_by', 'id'),
+            "sort_direction" => $this->get_page_vars('sort_direction', 'ASC'),
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_staff_management_list('data',$where_data);
+        
+        $filename  = 'Institutions_staff_list'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        $header[] = 'Staff Name';
+        $header[] = 'Mobile Number';
+        $header[] = 'Email';
+        $header[] = 'Role';
+        $header[] = 'Username';
+        $header[] = 'Password';      
+        $header[] = 'Eligibility For Incentive';      
+        $header[] = 'Status';      
+        
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+                $rows   = array();
+               
+                $rows[] = get_value($row,'staff_name','-');
+                $rows[] = get_value($row,'mobile_no','-'); 
+                $rows[] = get_value($row,'email','-');
+                $rows[] = get_value($row,'role','-');
+                $rows[] = get_value($row,'username','-');
+                $rows[] = get_value($row,'password','-');
+                $rows[] = $row['eligibility_for_incentives'] == '0' ? 'Yes':'No';
+                $rows[] = $row['status'] == '0' ? 'Enable' : 'Disable';
+              
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'Non AICPE Staff Details');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+    /*
+	@Description  :  delete Staff list
+	@Author       : Varsha wankhede
+	@Date         : 15-06-2021
+	*/
+
+	public function delete_staff_list()
+    {  
+        $user_id          = $this->log_in_user_id;
+        $id               = $this->input->post('id');
+        
+        if($this->Institution_model->delete_staff_list($id,$user_id))
+        {
+            $message = array(
+                'type' => 'success',
+                'msg'  => 'Staff list deleted successfully'
+            );
+        }
+        else
+        {
+            $message = array(
+                'type' => 'error',
+                'msg'  => 'Something Went Wrong!'
+            );
+        }
+        echo json_encode($message);
+        exit;
+    }
+
+    /*
+    @Author      : Varsha Wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 27-05-2021
+    */
+
+    public function edit_staff_list()
+    {
+        $id =  $this->input->post('id');
+       
+    	$message = array(
+                    'type' => 'error',
+                    'msg'  => 'Something went wrong!'
+                );
+    	
+        if(isset($id) && $id != '')
+        {        	
+        	$get_staff_detail = $this->common_model->select_by_key('aicpe_staff_managment',array('id' =>$id));
+
+        	$data['student_data'] = isset($get_staff_detail[0]) && count($get_staff_detail[0]) > 0 ? $get_staff_detail[0] : array();
+        	
+        	
+        	$html =  parent::s_render('admin/institution/staff_managment_list_modal',$data,true);
+             
+             $message = array('type'=>'success',
+             	'view'=>$html
+         		);
+        }
+       
+        echo json_encode($message);
+    }
+
+    /*
+    @Author      : Varsha Wankhede
+    @Input       : LIST OF STAFF INCENTIVES
+    @Output      : 
+    @Date        : 16-06-2021
+    */
+
+	public function staff_incentives()
+	{
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+	
+		$data['data'] = $this->Institution_model->get_staff_incentives('data',$where_data);
+		
+		$data['total_records'] =  $this->Institution_model->get_staff_incentives('count',$where_data);
+		
+		 // Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-staff-incentives/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/staff_incentives',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/staff_incentives_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+
+		//$this->load->view('admin/institution/staff_incentives');
 	}
 
 	public function staff_tasks(){
@@ -2227,14 +2668,14 @@ class Institutions extends MY_Controller{
                     $this->load->library('upload', $config);
                     $this->upload->initialize($config);
                     if(!$this->upload->do_upload('que_img'))
-                        {
-                            $error  = array('error'  => $this->upload->display_errors());
-                            
-                        }
-                        else
-                        {
-                            $que_img  = $this->upload->data('file_name');
-                        }
+                    {
+                        $error  = array('error'  => $this->upload->display_errors());
+                        
+                    }
+                    else
+                    {
+                        $que_img  = $this->upload->data('file_name');
+                    }
                 }
                 if(!empty($_FILES['option_1_img']['name'])){
                     
@@ -3277,8 +3718,104 @@ class Institutions extends MY_Controller{
 	}
 
 	public function offline_exam(){
-		$this->load->view('admin/institution/offline_exam');
+		
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+	
+		$data['data'] = $this->Institution_model->get_offline_exam('data',$where_data);
+		
+		$data['total_records'] =  $this->Institution_model->get_offline_exam('count',$where_data);
+		
+		 // Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-offline-exam/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/offline_exam',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/offline_exam_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+
+		//$this->load->view('admin/institution/offline_exam');
 	}
+	 /*
+    @Description : export offline exam
+    @Author      : Varsha wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 15-06-2021
+	*/
+	public function offline_exam_export()
+    {
+            
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+            "sort_by"        => $this->get_page_vars('sort_by', 'id'),
+            "sort_direction" => $this->get_page_vars('sort_direction', 'ASC'),
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_offline_exam('data',$where_data);
+        
+        $filename  = 'Institutions_aicpe_offline_exam'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        $header[] = 'Student ID';
+        $header[] = 'Student Name';
+        $header[] = 'Course & Duration';
+        $header[] = 'Exam Mode';
+        $header[] = 'Exam Status';
+        
+        
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+                $rows   = array();
+               
+                $rows[] = get_value($row,'student_id','-');
+                $rows[] = get_value($row,'student_name','-');
+                $rows[] = get_value($row,'course_duration','-');
+                $rows[] = get_value($row,'available_exam_mode','-');
+                $rows[] =  $row['status'] =='0' ? 'Appeared' : 'Disappeared';
+              
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'AICPE Offline Exam');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+
 
 	public function bulk_registration(){
 		$this->load->view('admin/institution/bulk_registration');
@@ -3287,10 +3824,118 @@ class Institutions extends MY_Controller{
 	public function certificates(){
 		$this->load->view('admin/institution/certificates');
 	}
+	 /*
+    @Description : list of participation certificates
+    @Author      : Varsha wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 15-06-2021
+	*/
 
 	public function participation_certificates(){
-		$this->load->view('admin/institution/participation_certificates');
+
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+	
+		$data['data'] = $this->Institution_model->get_participation_certificates('data',$where_data);
+		
+		$data['total_records'] =  $this->Institution_model->get_participation_certificates('count',$where_data);
+		
+		 // Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-participation-certificates/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/participation_certificates',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/participation_certificates_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+
+
+		//$this->load->view('admin/institution/participation_certificates');
 	}
+	 /*
+    @Description : export offline exam
+    @Author      : Varsha wankhede
+    @Input       : 
+    @Output      : 
+    @Date        : 15-06-2021
+	*/
+	public function participation_certificates_export()
+    {
+            
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+            "sort_by"        => $this->get_page_vars('sort_by', 'id'),
+            "sort_direction" => $this->get_page_vars('sort_direction', 'ASC'),
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_participation_certificates('data',$where_data);
+        
+        $filename  = 'Institutions_aicpe_participation_certificates'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        
+        $header[] = 'Student Name';
+        $header[] = 'email';
+        $header[] = 'Mobile No.';
+        $header[] = 'Qualification';
+        $header[] = 'Session title';
+        $header[] = 'Venue';
+        $header[] = 'Date And Time';
+        
+        
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+                $rows   = array();
+                $rows[] = get_value($row,'student_name','-');
+                $rows[] = get_value($row,'email','-');
+                $rows[] = get_value($row,'mobile_no','-');
+                $rows[] = get_value($row,'qualification','-');
+                $rows[] = get_value($row,'session_title','-');
+                $rows[] = get_value($row,'venue','-');
+                $rows[] = get_value($row,'date_and_time','-');
+              
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'AICPE Participation Certificate');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+
 	 /*
     @Description  : Export Out of stock with unshipped orders
     @Author       : Bhavesh Chaudhari
