@@ -1,9 +1,9 @@
  <div class="col-12 mb-4 data-table-rows data-tables-hide-filter">
-    <table id="dataTableRows01" class="data-table responsive nowrap data-table-standard"
-        data-order="[[ 1, &quot;desc&quot; ]]">
+    <table class="custom_table table">
         <thead>
             <tr>
                 <th>Sr. No.</th>
+               <!--  <th>Photo</th> -->
                 <th>Staff Name</th>
                 <th>Mobile Number</th>
                 <th>Email</th>
@@ -23,6 +23,9 @@
                 <td>
                     <p class="list-item-heading"><?php echo $i; ?></p>
                 </td>
+               <!--  <td>
+                    <img src="<?php //echo base_url().$row['photo']?>" alt="Photo" style="height:50px;width:50px">
+                </td> -->
                 <td>
                     <p class="text-muted"><?= get_value($row,'staff_name','-');?></p>
                 </td>

@@ -6,14 +6,13 @@
                 <h1>Exam Status</h1>
                 <div class="text-zero top-right-button-container">
                   <button type="button" class="btn btn-primary btn-lg top-right-button mr-1" data-toggle="modal" data-target="#addEnquiry">Apply For Exam</button>
-                           
                 </div>
                 <div class="separator mb-5"></div>
             </div>
         </div>
         
         <div class="row">
-            <div class="col-lg-10 mb-3">
+            <div class="col-lg-8 mb-3">
               <form class="form-inline">
                 <div class="input-daterange input-group w-90" id="datepicker">
                       <input type="text" class="input-sm form-control" name="start"
@@ -25,6 +24,9 @@
                   <button type="submit" class="btn btn-primary default mar_l-5"> 
                       <i class="iconsminds-magnifi-glass"></i></button>
               </form>
+            </div>
+            <div class="col-lg-2 mb-3">
+              <span class="btn btn-info float-md-left default mar_l-5" id="reset-btn"><i class="iconsminds-refresh"></i></span>
             </div>
             <div class="col-lg-2  mb-3">
               <div class="btn-group right">

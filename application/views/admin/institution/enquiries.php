@@ -11,7 +11,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-lg-10 mb-3">
+            <div class="col-lg-8 mb-3">
               <form class="form-inline">
                 <div class="input-daterange input-group w-90" id="datepicker">
                       <input type="text" id="start_date" class="input-sm form-control date-picker" value="<?= $start_date !=='' ?  $start_date : '' ?>" name="start"
@@ -25,13 +25,16 @@
                       <span class="btn btn-primary default mar_l-5" id="search-btn"><i class="iconsminds-magnifi-glass"></i></span>
               </form>
             </div>
+            <div class="col-lg-2 mb-3">
+              <span class="btn btn-info float-md-left default mar_l-5" id="reset-btn"><i class="iconsminds-refresh"></i></span>
+            </div>
             <div class="col-lg-2  mb-3">
               <div class="btn-group right">
                 <a href="javascript:void(0)">
-                            <span id="export_report" class="btn btn-outline-primary btn-lg dropdown-toggle">
-                               EXPORT
-                            </span>
-                        </a> 
+                    <span id="export_report" class="btn btn-outline-primary btn-lg dropdown-toggle">
+                       EXPORT
+                    </span>
+                </a> 
                 <!-- <button class="btn btn-outline-primary btn-lg dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> EXPORT </button> -->
                   <!-- <div class="dropdown-menu">
                       <a class="dropdown-item" id="dataTablesCopy" href="#">Copy</a>

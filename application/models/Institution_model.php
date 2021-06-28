@@ -2598,6 +2598,7 @@ class Institution_model extends CI_Model
     	}
     	$this->db->from($table);
     	$this->db->join('aicpe_staff_managment','aicpe_staff_managment.id = aicpe_staff_incentives.staff_id','Left');
+    	$this->db->where('aicpe_staff_incentives.is_deleted','0');
     	
     //searching
 		if(isset($where_data['search']) && $where_data['search'] != '')
@@ -2679,6 +2680,226 @@ class Institution_model extends CI_Model
 		return $result;	
 		
 	}
+	
+    public function delete_staff_incentives($id,$user_id)
+    {
+        $data = array(
+            'is_deleted'    => '1',
+            //'is_active'    => '0',
+            'modified_by'   => $user_id,
+            'modified_date' => get_inserted_date_time()
+            );
+
+        if(is_array($id))
+        {
+            $this->db->where_in('id',$id);
+        }
+
+        else
+        {
+            $this->db->where('id',$id);
+        }
+
+        if($this->db->update('aicpe_staff_incentives',$data))
+        {
+            return TRUE;
+        }
+        else
+        {
+            return FALSE;
+        }
+    }
+
+    public function edit_staff_incentives_modal($id='')
+	{
+		$result = array();
+
+		if(isset($id) && $id !=='')
+		{
+			$this->db->select(array(
+				'aicpe_staff_incentives.id',
+				'aicpe_staff_incentives.staff_id',
+				'aicpe_staff_incentives.task_assign_date',
+				'aicpe_staff_incentives.task',
+				'aicpe_staff_incentives.description',
+				'aicpe_staff_managment.staff_name',
+				'aicpe_staff_managment.mobile_no',
+				'aicpe_staff_managment.email',
+				
+			));
+
+			$this->db->from('aicpe_staff_incentives');
+
+			$this->db->join('aicpe_staff_managment','aicpe_staff_managment.id=aicpe_staff_incentives.staff_id','left');
+			$this->db->where('aicpe_staff_managment.id', $id);
+			
+			$result = $this->db->get()->result_array();
+		}
+
+		return $result;  
+	}
+
+	public function get_staff_task($type="data",$where_data)
+    {
+    	$table = "aicpe_staff_incentives";
+
+    	if($type == 'data')
+    	{
+    		$this->db->select(array(
+    			'aicpe_staff_incentives.*',
+    			'aicpe_staff_managment.staff_name',
+    			'aicpe_staff_managment.mobile_no',
+    			'aicpe_staff_managment.email',
+    		));
+    	}
+    	else
+    	{
+    		$this->db->select('aicpe_staff_incentives.id');
+    	}
+    	$this->db->from($table);
+    	$this->db->join('aicpe_staff_managment','aicpe_staff_managment.id = aicpe_staff_incentives.staff_id','Left');
+    	$this->db->where('aicpe_staff_incentives.is_deleted','0');
+    	
+    //searching
+		if(isset($where_data['search']) && $where_data['search'] != '')
+		{	
+			$this->db->group_start();
+			$this->db->like('aicpe_staff_managment.staff_name', addslashes($where_data['search']));
+			$this->db->or_like('aicpe_staff_managment.email', addslashes($where_data['search']));					
+			$this->db->group_end();
+		}
+
+		if(isset($where_data['start_date']) && $where_data['start_date'] !='')
+		{
+			$this->db->where('aicpe_staff_incentives.inserted_date >=', $where_data['start_date'].' 00:00:00');
+		
+		}	
+		if(isset($where_data['end_date']) && $where_data['end_date'] !='')
+		{
+			$this->db->where('aicpe_staff_incentives.inserted_date <=', $where_data['end_date'].' 23:59:59');
+		}	
+
+
+		//pagination and sorting
+		if(isset($where_data['per_page']) && $type == 'data')
+		{
+			$limit = $where_data['per_page'];
+
+			if($where_data['page'] != 0)
+			{
+				$page = --$where_data['page'];
+			}
+			else
+			{
+				$page = $where_data['page'];
+			}
+
+			$this->db->limit($limit, $page*$limit);
+		}
+
+
+		if(isset($where_data['sort_by']) && $type == 'data')
+		{
+			// Set sorting
+			if($where_data['sort_by'] != '' && $where_data['sort_direction'] != '')
+			{		
+
+				if(in_array($where_data['sort_by'], array('incentive_pattern','incentive_amount')))
+				{
+					$this->db->order_by('aicpe_staff_incentives.'.$where_data['sort_by'],$where_data['sort_direction']);
+					
+				}
+				elseif(in_array($where_data['sort_by'],array('incentive_amount','inserted_date')))
+				{
+					$this->db->order_by('aicpe_staff_incentives.'.$where_data['sort_by'],$where_data['sort_direction']);
+				}
+				else
+				{
+					// Set default sorting
+					$this->db->order_by('aicpe_staff_incentives.inserted_date','desc');
+				}
+			}
+			else
+			{
+				// Set default sorting
+				$this->db->order_by('aicpe_staff_incentives.inserted_date','desc');
+			}
+		}
+		
+		// If data is required
+		if($type == 'data')
+		{
+			$result = $this->db->get()->result_array();	
+			//pr($this->db->last_query());		
+		}   
+		else
+		{
+			$result = $this->db->get()->num_rows();			
+		}
+		
+		return $result;	
+		
+	}
+
+	 public function edit_staff_task_modal($id='')
+	{
+		$result = array();
+
+		if(isset($id) && $id !=='')
+		{
+			$this->db->select(array(
+				'aicpe_staff_incentives.id',
+				'aicpe_staff_incentives.staff_id',
+				'aicpe_staff_incentives.task_assign_date',
+				'aicpe_staff_incentives.task',
+				'aicpe_staff_incentives.description',
+				'aicpe_staff_managment.staff_name',
+				'aicpe_staff_managment.mobile_no',
+				'aicpe_staff_managment.email',
+				
+			));
+
+			$this->db->from('aicpe_staff_incentives');
+
+			$this->db->join('aicpe_staff_managment','aicpe_staff_managment.id=aicpe_staff_incentives.staff_id','left');
+			$this->db->where('aicpe_staff_managment.id', $id);
+			
+			$result = $this->db->get()->result_array();
+		}
+
+		return $result;  
+	}
+
+	 public function delete_staff_task($id,$user_id)
+    {
+        $data = array(
+            'is_deleted'    => '1',
+            //'is_active'    => '0',
+            'modified_by'   => $user_id,
+            'modified_date' => get_inserted_date_time()
+            );
+
+        if(is_array($id))
+        {
+            $this->db->where_in('id',$id);
+        }
+
+        else
+        {
+            $this->db->where('id',$id);
+        }
+
+        if($this->db->update('aicpe_staff_incentives',$data))
+        {
+            return TRUE;
+        }
+        else
+        {
+            return FALSE;
+        }
+    }
+	
+
 	public function get_assignments($type="data",$where_data)
     {
     	$table = "aicpe_assignment";
@@ -2694,8 +2915,9 @@ class Institution_model extends CI_Model
     		$this->db->select('aicpe_assignment.id');
     	}
     	$this->db->from($table);
+    	$this->db->where('is_deleted','0');
     	
-    //searching
+   		 //searching
 		if(isset($where_data['search']) && $where_data['search'] != '')
 		{	
 			$this->db->group_start();
@@ -2773,4 +2995,570 @@ class Institution_model extends CI_Model
 		
 		return $result;	
 	}
+	public function delete_assignments($id,$user_id)
+    {
+        $data = array(
+            'is_deleted'    => '1',
+            //'is_active'    => '0',
+            'modified_by'   => $user_id,
+            'modified_date' => get_inserted_date_time()
+            );
+
+        if(is_array($id))
+        {
+            $this->db->where_in('id',$id);
+        }
+
+        else
+        {
+            $this->db->where('id',$id);
+        }
+
+        if($this->db->update('aicpe_assignment',$data))
+        {
+            return TRUE;
+        }
+        else
+        {
+            return FALSE;
+        }
+    }
+	 public function get_employers_list($type="data",$where_data)
+	{
+		$table = "aicpe_employers";
+
+		if($type=='data')
+		{
+			$this->db->select(array(
+				'aicpe_employers.*',
+			));
+		}
+		else
+		{			
+			$this->db->select('aicpe_employers.id');		
+		}
+		
+		$this->db->from($table);
+		$this->db->where("aicpe_employers.is_deleted","0");
+
+		//searching
+		if(isset($where_data['search']) && $where_data['search'] != '')
+		{	
+			$this->db->group_start();
+			$this->db->like('aicpe_employers.employer_name', addslashes($where_data['search']));
+			$this->db->group_end();
+		}
+
+		if(isset($where_data['start_date']) && $where_data['start_date'] !='')
+		{
+			$this->db->where('aicpe_employers.inserted_date >=', format_date($where_data['start_date'],'Y-m-d').' 00:00:00');
+		
+		}	
+		if(isset($where_data['end_date']) && $where_data['end_date'] !='')
+		{
+			$this->db->where('aicpe_employers.inserted_date <=', format_date($where_data['end_date'],'Y-m-d').' 23:59:59');
+		}	
+
+
+		//pagination and sorting
+		if(isset($where_data['per_page']) && $type == 'data')
+		{
+			$limit = $where_data['per_page'];
+
+			if($where_data['page'] != 0)
+			{
+				$page = --$where_data['page'];
+			}
+			else
+			{
+				$page = $where_data['page'];
+			}
+
+			$this->db->limit($limit, $page*$limit);
+		}
+
+
+		if(isset($where_data['sort_by']) && $type == 'data')
+		{
+			// Set sorting
+			if($where_data['sort_by'] != '' && $where_data['sort_direction'] != '')
+			{		
+
+				if(in_array($where_data['sort_by'], array('staff_name','mobile_no')))
+				{
+					$this->db->order_by('aicpe_employers.'.$where_data['sort_by'],$where_data['sort_direction']);
+					
+				}
+				elseif(in_array($where_data['sort_by'],array('staff_name','inserted_date')))
+				{
+					$this->db->order_by('aicpe_employers.'.$where_data['sort_by'],$where_data['sort_direction']);
+				}
+				else
+				{
+					// Set default sorting
+					$this->db->order_by('aicpe_employers.inserted_date','desc');
+				}
+			}
+			else
+			{
+				// Set default sorting
+				$this->db->order_by('aicpe_employers.inserted_date','desc');
+			}
+		}
+		
+		$this->db->group_by('aicpe_employers.id');
+		//pr($this->db->get_compiled_select());
+		// If data is required
+		if($type == 'data')
+		{
+			$result = $this->db->get()->result_array();			
+		}   
+		else
+		{
+			$result = $this->db->get()->num_rows();			
+		}
+		
+		return $result;	
+		
+	}
+	public function delete_employers($id,$user_id){
+		$data = array(
+				'is_deleted' =>'1',
+				'modified_by' => $user_id,
+				'modified_date' => get_inserted_date_time()
+					);
+
+		if(is_array($id))
+		{
+			$this->db->where_in('id',$id);
+		}
+		else
+		{
+			$this->db->where('id',$id);
+		}
+		if($this->db->update('aicpe_employers',$data))
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	public function get_library_books_categories($type="data",$where_data)
+	{
+		$table = "aicpe_library_books_categories";
+
+		if($type=='data')
+		{
+			$this->db->select(array(
+				'aicpe_library_books_categories.*',
+			));
+		}
+		else
+		{			
+			$this->db->select('aicpe_library_books_categories.id');		
+		}
+		
+		$this->db->from($table);
+		$this->db->where("aicpe_library_books_categories.is_deleted","0");
+
+		//searching
+		if(isset($where_data['search']) && $where_data['search'] != '')
+		{	
+			$this->db->group_start();
+			$this->db->like('aicpe_library_books_categories.book_category', addslashes($where_data['search']));
+			$this->db->group_end();
+		}
+
+		if(isset($where_data['start_date']) && $where_data['start_date'] !='')
+		{
+			$this->db->where('aicpe_library_books_categories.inserted_date >=', format_date($where_data['start_date'],'Y-m-d').' 00:00:00');
+		
+		}	
+		if(isset($where_data['end_date']) && $where_data['end_date'] !='')
+		{
+			$this->db->where('aicpe_library_books_categories.inserted_date <=', format_date($where_data['end_date'],'Y-m-d').' 23:59:59');
+		}	
+
+
+		//pagination and sorting
+		if(isset($where_data['per_page']) && $type == 'data')
+		{
+			$limit = $where_data['per_page'];
+
+			if($where_data['page'] != 0)
+			{
+				$page = --$where_data['page'];
+			}
+			else
+			{
+				$page = $where_data['page'];
+			}
+
+			$this->db->limit($limit, $page*$limit);
+		}
+
+
+		if(isset($where_data['sort_by']) && $type == 'data')
+		{
+			// Set sorting
+			if($where_data['sort_by'] != '' && $where_data['sort_direction'] != '')
+			{		
+
+				if(in_array($where_data['sort_by'], array('book_category')))
+				{
+					$this->db->order_by('aicpe_library_books_categories.'.$where_data['sort_by'],$where_data['sort_direction']);
+					
+				}
+				elseif(in_array($where_data['sort_by'],array('book_category','inserted_date')))
+				{
+					$this->db->order_by('aicpe_library_books_categories.'.$where_data['sort_by'],$where_data['sort_direction']);
+				}
+				else
+				{
+					// Set default sorting
+					$this->db->order_by('aicpe_library_books_categories.inserted_date','desc');
+				}
+			}
+			else
+			{
+				// Set default sorting
+				$this->db->order_by('aicpe_library_books_categories.inserted_date','desc');
+			}
+		}
+		
+		$this->db->group_by('aicpe_library_books_categories.id');
+		//pr($this->db->get_compiled_select());
+		// If data is required
+		if($type == 'data')
+		{
+			$result = $this->db->get()->result_array();			
+		}   
+		else
+		{
+			$result = $this->db->get()->num_rows();			
+		}
+		
+		return $result;	
+		
+	}
+
+	public function delete_library_books_categories($id,$user_id){
+		
+		$data = array(
+				'is_deleted' =>'1',
+				'modified_by' => $user_id,
+				'modified_date' => get_inserted_date_time()
+					);
+
+		if(is_array($id))
+		{
+			$this->db->where_in('id',$id);
+		}
+		else
+		{
+			$this->db->where('id',$id);
+		}
+		if($this->db->update('aicpe_library_books_categories',$data))
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+
+
+	public function get_library_books($type="data",$where_data)
+	{
+		$table = "aicpe_library_books";
+
+		if($type=='data')
+		{
+			$this->db->select(array(
+				'aicpe_library_books.*',
+				'aicpe_library_books_categories.book_category'
+			));
+		}
+		else
+		{			
+			$this->db->select('aicpe_library_books.id');		
+		}
+		
+		$this->db->from($table);
+
+		$this->db->join('aicpe_library_books_categories','aicpe_library_books.book_category_id = aicpe_library_books_categories.id','left');
+
+		$this->db->where("aicpe_library_books.is_deleted","0");
+
+		//searching
+		if(isset($where_data['search']) && $where_data['search'] != '')
+		{	
+			$this->db->group_start();
+			$this->db->like('aicpe_library_books.book_name', addslashes($where_data['search']));
+			$this->db->group_end();
+		}
+
+		if(isset($where_data['start_date']) && $where_data['start_date'] !='')
+		{
+			$this->db->where('aicpe_library_books.inserted_date >=', format_date($where_data['start_date'],'Y-m-d').' 00:00:00');
+		
+		}	
+		if(isset($where_data['end_date']) && $where_data['end_date'] !='')
+		{
+			$this->db->where('aicpe_library_books.inserted_date <=', format_date($where_data['end_date'],'Y-m-d').' 23:59:59');
+		}
+
+		//pagination and sorting
+		if(isset($where_data['per_page']) && $type == 'data')
+		{
+			$limit = $where_data['per_page'];
+
+			if($where_data['page'] != 0)
+			{
+				$page = --$where_data['page'];
+			}
+			else
+			{
+				$page = $where_data['page'];
+			}
+
+			$this->db->limit($limit, $page*$limit);
+		}
+
+		if(isset($where_data['sort_by']) && $type == 'data')
+		{
+			// Set sorting
+			if($where_data['sort_by'] != '' && $where_data['sort_direction'] != '')
+			{		
+
+				if(in_array($where_data['sort_by'], array('book_name')))
+				{
+					$this->db->order_by('aicpe_library_books.'.$where_data['sort_by'],$where_data['sort_direction']);
+					
+				}
+				elseif(in_array($where_data['sort_by'],array('book_name','inserted_date')))
+				{
+					$this->db->order_by('aicpe_library_books.'.$where_data['sort_by'],$where_data['sort_direction']);
+				}
+				else
+				{
+					// Set default sorting
+					$this->db->order_by('aicpe_library_books.inserted_date','desc');
+				}
+			}
+			else
+			{
+				// Set default sorting
+				$this->db->order_by('aicpe_library_books.inserted_date','desc');
+			}
+		}
+		
+		$this->db->group_by('aicpe_library_books.id');
+		//pr($this->db->get_compiled_select());
+		// If data is required
+		if($type == 'data')
+		{
+			$result = $this->db->get()->result_array();			
+		}   
+		else
+		{
+			$result = $this->db->get()->num_rows();			
+		}
+		
+		return $result;	
+		
+	}
+	public function delete_library_books($id,$user_id){
+		
+		$data = array(
+				'is_deleted' =>'1',
+				'modified_by' => $user_id,
+				'modified_date' => get_inserted_date_time()
+					);
+
+		if(is_array($id))
+		{
+			$this->db->where_in('id',$id);
+		}
+		else
+		{
+			$this->db->where('id',$id);
+		}
+		if($this->db->update('aicpe_library_books',$data))
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+
+	public function block_library_books($id,$user_id){
+		
+		$data = array(
+				'is_blocked' =>'block',
+				'modified_by' => $user_id,
+				'modified_date' => get_inserted_date_time()
+					);
+
+		if(is_array($id))
+		{
+			$this->db->where_in('id',$id);
+		}
+		else
+		{
+			$this->db->where('id',$id);
+		}
+		if($this->db->update('aicpe_library_books',$data))
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	public function get_library_books_issued($type="data",$where_data)
+	{
+		$table = "aicpe_library_books_issued";
+
+		if($type=='data')
+		{
+			$this->db->select(array(
+				'aicpe_library_books_issued.*',
+				'aicpe_student.student_name',
+				'aicpe_student.email',
+				'aicpe_student.mobile_no',
+				'aicpe_library_books.book_name',
+			));
+		}
+		else
+		{			
+			$this->db->select('aicpe_library_books_issued.id');		
+		}
+		
+		$this->db->from($table);
+		
+		$this->db->join('aicpe_library_books','aicpe_library_books.id = aicpe_library_books_issued.book_id AND aicpe_library_books_issued.book_category_id = aicpe_library_books.book_category_id','LEFT');
+
+		$this->db->join('aicpe_student','aicpe_student.student_id = aicpe_library_books_issued.student_id','LEFT');
+		$this->db->where("aicpe_library_books_issued.is_deleted","0");
+
+		//searching
+		if(isset($where_data['search']) && $where_data['search'] != '')
+		{	
+			$this->db->group_start();
+			$this->db->like('aicpe_library_books_issued.issue_date', addslashes($where_data['search']));
+			$this->db->group_end();
+		}
+
+		if(isset($where_data['start_date']) && $where_data['start_date'] !='')
+		{
+			$this->db->where('aicpe_library_books_issued.inserted_date >=', format_date($where_data['start_date'],'Y-m-d').' 00:00:00');
+		
+		}	
+		if(isset($where_data['end_date']) && $where_data['end_date'] !='')
+		{
+			$this->db->where('aicpe_library_books_issued.inserted_date <=', format_date($where_data['end_date'],'Y-m-d').' 23:59:59');
+		}	
+
+
+		//pagination and sorting
+		if(isset($where_data['per_page']) && $type == 'data')
+		{
+			$limit = $where_data['per_page'];
+
+			if($where_data['page'] != 0)
+			{
+				$page = --$where_data['page'];
+			}
+			else
+			{
+				$page = $where_data['page'];
+			}
+
+			$this->db->limit($limit, $page*$limit);
+		}
+
+
+		if(isset($where_data['sort_by']) && $type == 'data')
+		{
+			// Set sorting
+			if($where_data['sort_by'] != '' && $where_data['sort_direction'] != '')
+			{		
+
+				if(in_array($where_data['sort_by'], array('issue_date')))
+				{
+					$this->db->order_by('aicpe_library_books_issued.'.$where_data['sort_by'],$where_data['sort_direction']);
+					
+				}
+				elseif(in_array($where_data['sort_by'],array('issue_date','inserted_date')))
+				{
+					$this->db->order_by('aicpe_library_books_issued.'.$where_data['sort_by'],$where_data['sort_direction']);
+				}
+				else
+				{
+					// Set default sorting
+					$this->db->order_by('aicpe_library_books_issued.inserted_date','desc');
+				}
+			}
+			else
+			{
+				// Set default sorting
+				$this->db->order_by('aicpe_library_books_issued.inserted_date','desc');
+			}
+		}
+		
+		$this->db->group_by('aicpe_library_books_issued.id');
+		//pr($this->db->get_compiled_select());
+		// If data is required
+		if($type == 'data')
+		{
+			$result = $this->db->get()->result_array();			
+		}   
+		else
+		{
+			$result = $this->db->get()->num_rows();			
+		}
+		
+		return $result;	
+		
+	}
+
+	/*
+	    @Description : Get Valid Student Data
+	    @Author      : Ankita Mandlik
+	    @Date        : 28-06-2021
+	*/
+
+	public function get_valid_student($search_term='')
+	{
+		$result = array();
+
+		if($search_term !== '')
+		{
+			$this->db->select(
+				'aicpe_student.id,
+				aicpe_student.student_name,
+				aicpe_student.mobile_no,
+				aicpe_student.email'
+			);
+
+			$this->db->from('aicpe_student');
+			$this->db->like('aicpe_student.student_name', addslashes($search_term));
+			$this->db->limit(1);
+
+			$this->db->order_by('aicpe_student.id','DESC');
+
+			$result = $this->db->get()->row_array();
+
+		}
+
+		return $result;
+	}
+
 }

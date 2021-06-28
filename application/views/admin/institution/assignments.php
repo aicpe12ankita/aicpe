@@ -12,7 +12,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-lg-10 mb-3">
+            <div class="col-lg-8 mb-3">
               <form class="form-inline">
                 <div class="input-daterange input-group w-90" id="datepicker">
                       <input type="text" class="input-sm form-control" name="start"
@@ -24,6 +24,9 @@
                   <button type="submit" class="btn btn-primary default mar_l-5"> 
                       <i class="iconsminds-magnifi-glass"></i></button>
               </form>
+            </div>
+            <div class="col-lg-2 mb-3">
+              <span class="btn btn-info float-md-left default mar_l-5" id="reset-btn"><i class="iconsminds-refresh"></i></span>
             </div>
             <div class="col-lg-2  mb-3">
               <div class="btn-group right">
@@ -320,6 +323,7 @@ $.ajax({
     {
         $('#add_assignment').modal('hide');
         toastr[data.type](data.msg);
+        $("#add_assignments_form")[0].reset()
         page_update();
 
     }   
@@ -513,9 +517,9 @@ function page_update()
   });
   });
 
-  function delete_admissions_by_id(id){ 
+  function delete_assignment_by_id(id){ 
     $.ajax({
-              url: '<?php echo base_url(); ?>delete-institutions-admissions',
+              url: '<?php echo base_url(); ?>delete-institutions-assignments',
               type:'post',
               dataType: 'json',
               data: {id:id},
@@ -533,7 +537,6 @@ function page_update()
                   if(response.type=='success')
                   {                    
                     toastr[response.type](response.msg);
-                   
                     page_update();
                   }else{
                     toastr[response.type](response.msg);
@@ -560,6 +563,7 @@ function page_update()
                 {
                     $('#edit_assignment').html(response.view);
                     $('#edit_assignment').modal('show');
+                    page_update();
                 }
                 else{
                     toastr[response.type](response.msg);

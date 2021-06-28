@@ -1,10 +1,8 @@
 <?php $this->load->view('admin/includes/institution_header'); ?>
-
     <main>
         <div class="row">
             <div class="col-12">
                 <h1>Old Students</h1>
-                
                 <div class="separator mb-5"></div>
             </div>
         </div>

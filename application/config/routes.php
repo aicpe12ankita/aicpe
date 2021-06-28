@@ -156,6 +156,7 @@ $route['institutions-assignments']= 'Institutions/assignments';
 $route['institutions-assignments/(:num)']= 'Institutions/assignments/$1';
 $route['export-institutions-assignments']= 'Institutions/assignments_export';
 $route['edit-institutions-assignments']= 'Institutions/edit_assignments';
+$route['delete-institutions-assignments']= 'Institutions/delete_assignments';
 $route['save-institutions-assignments']['post']= 'Institutions/save_assignments';
 
 
@@ -193,10 +194,32 @@ $route['export-institution-aicpe-courses']['post']= 'Institutions/aicpe_courses_
 
 $route['institutions-course-material']= 'Institutions/course_material';
 $route['institutions-suggest-course']= 'Institutions/suggest_course';
+
 $route['institutions-employers']= 'Institutions/employers';
+$route['institutions-employers/(:num)']= 'Institutions/employers/$1';
+$route['delete-institutions-employers']= 'Institutions/delete_employers';
+$route['export-institutions-employers']= 'Institutions/export_employers';
+$route['edit-institutions-employers']= 'Institutions/edit_employers';
+$route['save-institutions-employers']= 'Institutions/save_employers';
+
 $route['institutions-library-books-categories']= 'Institutions/library_books_categories';
+$route['institutions-library-books-categories/(:num)']= 'Institutions/library_books_categories/$1';
+$route['export-institutions-library-books-categories']= 'Institutions/export_library_books_categories';
+$route['delete-institutions-library-books-categories']= 'Institutions/delete_library_books_categories';
+$route['save-institutions-library-books-categories'] ['post']= 'Institutions/save_library_books_categories';
+$route['edit-institutions-library-books-categories']= 'Institutions/edit_library_books_categories';
+
 $route['institutions-library-books']= 'Institutions/library_books';
+$route['institutions-library-books/(:num)']= 'Institutions/library_books/$1';
+$route['export-institutions-library-books']= 'Institutions/export_library_books';
+$route['save-institutions-library-books']= 'Institutions/save_library_books';
+$route['delete-institutions-library-books']= 'Institutions/delete_library_books';
+$route['edit-institutions-library-books']= 'Institutions/edit_library_books';
+$route['block-institutions-library-books']= 'Institutions/block_library_books';
+
 $route['institutions-library-books-issued']= 'Institutions/library_books_issued';
+$route['get-valid-student']['post']= 'Institutions/get_valid_student';
+
 $route['institutions-library-books-return']= 'Institutions/library_books_return';
 $route['institutions-library-books-fine']= 'Institutions/library_books_fine';
 $route['institutions-library-e-books']= 'Institutions/library_e_books';
@@ -209,12 +232,20 @@ $route['edit-institutions-staff-list']= 'Institutions/edit_staff_list';
 $route['save-institutions-staff-list']= 'Institutions/save_staff_list';
 
 $route['institutions-staff-incentives']= 'Institutions/staff_incentives';
-$route['institutions-staff-incentives/(:/num)']= 'Institutions/staff_incentives/$1';
+$route['institutions-staff-incentives/(:num)']= 'Institutions/staff_incentives/$1';
 $route['export-institutions-staff-incentives']= 'Institutions/staff_incentives_export';
-$route['edit-institutions-staff-incentives']= 'Institutions/edit_staff_incentives';
-$route['delete-institutions-staff-incentives']= 'Institutions/delete_staff_incentives';
+$route['edit-institutions-staff-incentives']['post']= 'Institutions/edit_staff_incentives';
+$route['save-institutions-staff-incentives']= 'Institutions/save_staff_incentives';
+$route['delete-institutions-staff-incentives']['post']= 'Institutions/delete_staff_incentives';
 
 $route['institutions-staff-tasks']= 'Institutions/staff_tasks';
+$route['institutions-staff-tasks/(:num)']= 'Institutions/staff_tasks/$1';
+$route['export-institutions-staff-tasks']= 'Institutions/staff_tasks_export';
+$route['delete-institutions-staff-tasks']= 'Institutions/delete_staff_tasks';
+$route['edit-institutions-staff-tasks']= 'Institutions/edit_staff_tasks';
+$route['save-institutions-staff-tasks']= 'Institutions/save_staff_tasks';
+
+
 $route['institutions-wallet']= 'Institutions/wallet';
 $route['institutions-sms-management']= 'Institutions/sms_management';
 $route['institutions-marketing-material']= 'Institutions/marketing_material';

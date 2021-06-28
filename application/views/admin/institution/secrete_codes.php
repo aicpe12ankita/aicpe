@@ -1,16 +1,14 @@
 <?php $this->load->view('admin/includes/institution_header'); ?>
-
     <main>
         <div class="row">
             <div class="col-12">
                 <h1>Exam Secret Code</h1>
-                
                 <div class="separator mb-5"></div>
             </div>
         </div>
  
         <div class="row">
-            <div class="col-lg-10 mb-3">
+            <div class="col-lg-8 mb-3">
               <form class="form-inline">
                 <div class="input-daterange input-group w-90" id="datepicker">
                       <input type="text" class="input-sm form-control" name="start"
@@ -31,6 +29,9 @@
                   </span>
                 </a> 
               </div>
+            </div>
+            <div class="col-lg-2 mb-3">
+              <span class="btn btn-info float-md-left default mar_l-5" id="reset-btn"><i class="iconsminds-refresh"></i></span>
             </div>  
         </div>
         <div class="container-fluid">

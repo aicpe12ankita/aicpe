@@ -1,5 +1,4 @@
 <?php $this->load->view('admin/includes/institution_header'); ?>
-
     <main>
         <div class="row">
             <div class="col-12">
@@ -8,7 +7,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-lg-10 mb-3">
+            <div class="col-lg-8 mb-3">
               <form class="form-inline">
                 <div class="input-daterange input-group w-90" id="datepicker">
                       <input type="text" class="input-sm form-control" name="start"
@@ -21,13 +20,17 @@
                       <i class="iconsminds-magnifi-glass"></i></button>
               </form>
             </div>
+            <div class="col-lg-2 mb-3">
+              <span class="btn btn-info float-md-left default mar_l-5" id="reset-btn"><i class="iconsminds-refresh"></i></span>
+            </div>
             <div class="col-lg-2  mb-3">
               <div class="btn-group right">
                   <a href="javascript:void(0);">
                     <span id="export_report" class="btn btn-outline-primary btn-lg">Export</span>
                   </a>
               </div>
-            </div>  
+            </div> 
+             
         </div>
         
         <div class="container-fluid">
@@ -38,38 +41,55 @@
                             <h5 class="text-center">Assign Incentives</h5>
                         </div>
                         <div class="card-body">
-                            <form>
+                            <form id="add_staff_incentive_form" method="post"  role="form" onsubmit="return false;" name="add_staff_incentive_form">
                                 <div class="form-group">
                                     <label>Staff Name<span class="text-small text-muted">(* onkeyup it will validate if student exist in database or not)</span></label>
-                                    <input type="text" name="" class="form-control">
+                                    <input type="text" name="staff_name" class="form-control" value="">
                                 </div>
                                 <div class="form-group">
                                     <label>Staff Email<span class="text-small text-muted">(* if Staff is valid email text will fill automatically )</span></label>
-                                    <input type="email" name="" class="form-control">
+                                    <input type="email" name="email" class="form-control">
                                 </div>
                                 <div class="form-group">
-                                    <label>Mobile 1<span class="text-small text-muted">(* if Staff is valid mobile text will fill automatically )</span></label>
-                                    <input type="email" name="" class="form-control">
+                                    <label>Mobile No<span class="text-small text-muted">(* if Staff is valid mobile text will fill automatically )</span></label>
+                                    <input type="text" name="mobile_no" class="form-control">
                                 </div>
                                 <div class="form-group">
                                     <label>Incentive Pattern</label>
-                                    <select class="form-control">
-                                      <option label="&nbsp;">&nbsp;</option>
-                                      <option value="Flexbox">Per Addmission</option>
-                                      <option value="Sass">Total Business</option>
-                                      <option value="React">Total Collection</option>
+                                    <select class="form-control" name="incentive_pattern">
+                                        <option label="">---Select Incentive pattern---</option>
+                                        <?php foreach ($incentive_pattern_array as $key => $value) {?>
+                                        <option value="<?=$key ?>" ><?= $value ?></option>
+                                        <?php }?>
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>Incentive Ammount</label>
-                                    <input class="form-control" type="text">
+                                    <label>Incentive Amount</label>
+                                    <input class="form-control" type="text" name="incentive_amount">
                                 </div>
-                                <button type="submit" class="btn btn-primary">Submit</button>
+                                <div class="form-group">
+                                    <label>Task Assign Date </label>
+                                    <div class="input-group date">
+                                      <span class="input-group-text input-group-append input-group-addon">
+                                            <i class="simple-icon-calendar" id="task_assign_date"name="task_assign_date"></i>
+                                      </span>
+                                      <input type="text" class="form-control" id="task_assign_date"name="task_assign_date" value="" >
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Task</label>
+                                    <input class="form-control" type="text" name="task">
+                                </div>
+                                <div class="form-group">
+                                    <label>Description</label>
+                                    <textarea class="form-control" name="description"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">ADD</button>
                             </form>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-12">
+                <div class="col-lg-6">
                     <div class="card">
                 <div class="card-body">
                     <div class="row">
@@ -119,8 +139,7 @@
                             <div class="separator"></div>
                         </div>
                     </div>
-                    <div class="row">
-
+                    <div class="row" id="ajax_data">
                         <?php $this->load->view('admin/institution/staff_incentives_ajax.php');?>
                     </div>
                 </div>
@@ -129,7 +148,54 @@
             </div>
         </div>
     </main>
+    <div class="modal fade modal-right" id="edit_staff_incentive" tabindex="-1" role="dialog" aria-labelledby="" aria-hidden="true">
+  </div>
 <?php $this->load->view('admin/includes/footer'); ?>
+<script type="text/javascript">
+  
+  $("#task_assign_date").datepicker({
+    inline:true,
+    formate:"yyyy-mm-dd",
+    maxDate:"today"
+  });
+</script>
+
+<script type="text/javascript">
+ $('#add_staff_incentive_form').on('submit',function(event){
+
+    event.preventDefault();
+//var brand_name = $('#brand_name').val().trim();
+ var form_data = $('#add_staff_incentive_form').serialize();
+
+$.ajax({
+    url: '<?php echo base_url().'save-institutions-staff-incentives'; ?>',
+    type: 'POST',
+    dataType: 'json',
+    data: form_data,
+    beforeSend: function()
+    {
+        $(".main-loader").fadeIn();
+    },      
+    success:function(data)
+    {
+        toastr[data.type](data.msg);
+        $("#add_staff_incentive_form")[0].reset()
+        page_update();
+    }   
+})
+.done(function() {
+    $(".main-loader").hide();
+})
+.fail(function() {
+    toastr['error']('Something went wrong');
+})
+.always(function() {
+    $(".main-loader").hide();
+});
+
+return false;
+});
+</script>
 <script type="text/javascript">
   
 ///////// PAGINATION SCRIPT START
@@ -270,4 +336,87 @@ function page_update()
       });
 
   });
+</script>
+<script type="text/javascript">
+     $(document).ready(function(){
+
+      $('body').on('click', '#export_report', function(){
+    $.ajax({
+      url:" <?php echo base_url().'export-institutions-staff-incentives'; ?>",
+      type: "POST",
+      dataType : "json",
+      data:{ 
+        'search'          : $('#txt_search').val(),
+        'start_date'          : $('#start_date').val(),
+        'end_date'          : $('#end_date').val(),
+      },
+      beforeSend: function()
+      {
+        $(".main-loader").show();
+      },      
+      complete:function()
+      {
+        $(".main-loader").hide();
+      },
+      success: function( data )
+      {
+        window.location.href = data;
+      }
+    });
+  });
+  });
+function delete_staff_incentives_by_id(id){ 
+    $.ajax({
+              url: '<?php echo base_url(); ?>delete-institutions-staff-incentives',
+              type:'post',
+              dataType: 'json',
+              data: {id:id},
+              
+              beforeSend: function()
+              {
+                $(".main-loader").show();
+              },      
+              complete:function()
+              {
+                $(".main-loader").hide();
+              },
+              success: function(response){
+                
+                  if(response.type=='success')
+                  {                    
+                    toastr[response.type](response.msg);
+                   page_update();
+                  }else{
+                    toastr[response.type](response.msg);
+                  }
+              }
+         });
+ }
+function edit_staff_incentives_by_id(id){ 
+    $.ajax({
+              url: '<?php echo base_url(); ?>edit-institutions-staff-incentives',
+              type:'post',
+              dataType:'json',
+              data: {id:id},
+              
+              beforeSend: function()
+              {
+                $(".main-loader").show();
+              },      
+              success: function(data){
+                
+                  if(data.type == 'success')
+                {
+                    $('#edit_staff_incentive').html(data.view);
+                    $('#edit_staff_incentive').modal('show'); 
+                    page_update();
+                }
+                else
+                {
+                    toastr['error']('Something went wrong! Please try again');
+                }  
+                } 
+         });
+
+ }
 </script>

@@ -1,6 +1,5 @@
 <div class="col-12 mb-4 data-table-rows data-tables-hide-filter">
-                           
-    <table id="dataTableRows01" class="data-table responsive nowrap data-table-standard" data-order="[[ 1, &quot;desc&quot; ]]">
+    <table  class="custom_table table">
         <thead>
           <tr>
                 <th>Sr. No.</th>

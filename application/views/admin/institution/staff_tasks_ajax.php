@@ -40,8 +40,8 @@
                   <p class="description text-muted"><?= get_value($row,'description','-');?></p>
                 </td>
                 <td>
-                    <a href="javascript:void(0);" class="btn btn-xs btn-primary mb-1" onclick="edit_staff_incentives_by_id(<?= $row['id']?>);"><i class="simple-icon-note"></i></a>
-                    <a href="javascript:void(0);" class="btn btn-xs btn-warning mb-1" onclick="delete_staff_incentives_by_id(<?= $row['id']?>);"><i class="simple-icon-trash"></i></a>
+                    <a href="javascript:void(0);" class="btn btn-xs btn-primary mb-1" onclick="edit_staff_task_by_id(<?= $row['id']?>);"><i class="simple-icon-note"></i></a>
+                    <a href="javascript:void(0);" class="btn btn-xs btn-warning mb-1" onclick="delete_staff_task_by_id(<?= $row['id']?>);"><i class="simple-icon-trash"></i></a>
                 </td>
             </tr>
            <?php $i++; }

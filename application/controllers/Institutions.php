@@ -1324,6 +1324,37 @@ class Institutions extends MY_Controller{
        
         echo json_encode($message);
     }
+
+	/*
+	@Description  : delete admission list
+	@Author       : Varsha wankhede
+	@Date         : 18-05-2021
+	*/
+
+	public function delete_assignments()
+    {  
+        $user_id          = $this->log_in_user_id;
+        $id               = $this->input->post('id');
+       
+        if($this->Institution_model->delete_assignments($id,$user_id))
+        {	
+            $message = array(
+                'type' => 'success',
+                'msg'  => 'Assignment deleted successfully'
+            );
+        }
+        else
+        {
+            $message = array(
+                'type' => 'error',
+                'msg'  => 'Something Went Wrong!'
+            );
+        }
+        echo json_encode($message);
+        exit;
+    }
+
+
      /*
 	@Description  : save assignment list
 	@Author       : Varsha wankhede
@@ -1333,7 +1364,7 @@ class Institutions extends MY_Controller{
    public function save_assignments()
 	{
 		$post_data = $this->input->post();  
-		
+		//pr($post_data);
 		$response = array('type'=>'error','msg'=>'Something went wrong! Please try again.');
 
 		$update_array = array();
@@ -1411,11 +1442,12 @@ class Institutions extends MY_Controller{
 				'course_name' => is_not_empty($post_data['course_name']) ? $post_data['course_name'] : '',
 				'assignment_title' => is_not_empty($post_data['assignment_title']) ? $post_data['assignment_title'] : '',
 				'description' => is_not_empty($post_data['description']) ? $post_data['description'] : '',
-				'submission_date' => isset($post_data['submission_date']) ? $post_data['submission_date'] : '',
+				'submission_date' => isset($post_data['submission_date']) ? format_date($post_data['submission_date'],'Y-m-d' ): NULL,
+				'post_date' => isset($post_data['post_date']) ? format_date($post_data['post_date'],'Y-m-d' ): NULL,
 				'faculty' => is_not_empty($post_data['faculty']) ? $post_data['faculty'] : '',
 				'assignment_document' => $assignment_document_file_path,
 			);
-			
+			//pr($insert_data);
 			if(count($insert_data)>0)
 			{
 				$inserted_id = $this->common_model->insert_all('aicpe_assignment',$insert_data);
@@ -2311,21 +2343,900 @@ class Institutions extends MY_Controller{
 	public function suggest_course(){
 		$this->load->view('admin/institution/suggest_course');
 	}
+	 /*
+	@Description  : list of employee data
+	@Author       : Varsha wankhede
+	@Date         : 24-06-2021
+	*/
 
-	public function employers(){
-		$this->load->view('admin/institution/employers');
+	public function employers()
+	{
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+
+		$data['data'] = $this->Institution_model->get_employers_list('data',$where_data);
+	 	//pr($this->db->last_query());
+		$data['total_records'] =  $this->Institution_model->get_employers_list('count',$where_data);
+
+		$data['employer_gender_array']= array(
+    					'male' => 'Male',
+    					'female' => 'Female',
+    					'others' => 'Others',
+    			);
+    	$data['photo_type_array'] = array(
+						'adhar_card' => 'Adhar card',
+						'pan_card' => 'Pan card',
+						'driving_licence' => 'Driving Licence',
+				);
+
+		 // Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-employers/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/employers',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/employers_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+
+		//$this->load->view('admin/institution/employers');
 	}
+	 /*
+	@Description  : export employee data
+	@Author       : Varsha wankhede
+	@Date         : 24-06-2021
+	*/
+
+	public function export_employers()
+    {
+            
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+            "sort_by"        => $this->get_page_vars('sort_by', 'id'),
+            "sort_direction" => $this->get_page_vars('sort_direction', 'ASC'),
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_employers_list('data',$where_data);
+        
+        $filename  = 'Institutions_aicpe_employers'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        $header[] = 'Employer Code';
+        $header[] = 'Employer Name';
+        $header[] = 'Company Name';
+        $header[] = 'Designation';
+        $header[] = 'Mobile NO';
+        $header[] = 'No. Of Jobs Posted';
+        $header[] = 'Verified';
+        $header[] = 'status';
+        
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+                $rows   = array();
+               
+                $rows[] = get_value($row,'employer_code','-');
+                $rows[] = get_value($row,'employer_name','-');
+                $rows[] = get_value($row,'company_name','-');
+                $rows[] = get_value($row,'designation','-');
+                $rows[] = get_value($row,'mobile_no','-');
+                $rows[] = get_value($row,'no_of_job_posted');
+                $rows[] = get_value($row,'verified');
+                $rows[] =  $row['status'] =='0' ? 'Enable' : 'Disable';
+              
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'AICPE Employer');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+
+	/*
+	@Description  : delete empolyers list
+	@Author       : Varsha wankhede
+	@Date         : 24-06-2021
+	*/
+
+	public function delete_employers()
+	{
+		$user_id          = $this->log_in_user_id;
+        $id               = $this->input->post('id');
+        
+        if($this->Institution_model->delete_employers($id,$user_id))
+        {
+            $message = array(
+                'type' => 'success',
+                'msg'  => 'employees deleted successfully'
+            );
+        }
+        else
+        {
+            $message = array(
+                'type' => 'error',
+                'msg'  => 'Something Went Wrong!'
+            );
+        }
+        echo json_encode($message);
+        exit;
+
+	}
+
+	 /*
+	@Description  : edit employee data
+	@Author       : Varsha wankhede
+	@Date         : 24-06-2021
+	*/
+
+	public function edit_employers()
+    {
+        $id =  $this->input->post('id');
+       
+    	$message = array(
+                    'type' => 'error',
+                    'msg'  => 'Something went wrong!'
+                );
+
+    	$data['status_array']= array(
+    					'0'=>'Enable',
+    					'1'=>'Disable'
+    	);
+
+        if(isset($id) && $id != '')
+        {        	
+        	$get_employers_detail = $this->common_model->select_by_key('aicpe_employers',array('id' =>$id));
+
+        	$data['employers_data'] = isset($get_employers_detail[0]) && count($get_employers_detail[0]) > 0 ? $get_employers_detail[0] : array();
+        	
+        	$html =  parent::s_render('admin/institution/edit_employers_modal',$data,true);
+             
+             $message = array('type'=>'success',
+             	'view'=>$html
+         		);
+
+        }
+       
+        echo json_encode($message);
+    }
+    /*
+	@Description  : save employees Data
+	@Author       : Varsha wankhede
+	@Date         : 24-06-2021
+	*/
+
+   public function save_employers()
+	{
+		$post_data = $this->input->post();
+		//pr($this->input->post());
+		$response = array('type'=>'error','msg'=>'Something went wrong! Please try again.');
+		$update_array = array();
+		$employer_logo_file_path = '';
+		$employer_passport_photo_file_path = '';
+		$upload_photo_id_file_path = '';
+		
+		if(!empty($this->input->post('id')) && $this->input->post('id') !== '')
+		{
+			   if(!empty($_FILES['logo']['name']))
+			   {
+                    $config['upload_path']      = "uploads/employer_logo/";
+                    $config['allowed_types']    = "gif|jpg|png|jpeg";
+                    $config['encrypt_name']     =  true;
+                    $config['overwrite']        =  TRUE;
+                 
+                    $this->load->library('upload', $config);
+                    $this->upload->initialize($config);
+                    if(!$this->upload->do_upload('logo'))
+                    {
+                        $error  = array('error'  => $this->upload->display_errors());
+                    }
+                    else
+                    {
+                        $employer_logo_file  = $this->upload->data('file_name');
+                        $employer_logo_file_path = $config['upload_path'].$employer_logo_file;
+                    }
+                }
+            
+			$update_array = array(
+			'employer_code' => is_not_empty($post_data['employer_code']) ? $post_data['employer_code'] : '',
+			'employer_name' => is_not_empty($post_data['employer_name']) ? $post_data['employer_name'] : '',
+			'company_name' => is_not_empty($post_data['company_name']) ? $post_data['company_name'] : '',
+			'designation' => is_not_empty($post_data['designation']) ? $post_data['designation'] : '',
+			'mobile_no' => is_not_empty($post_data['mobile_no']) ? $post_data['mobile_no'] : '',
+			'no_of_job_posted' => is_not_empty($post_data['no_of_job_posted']) ? $post_data['no_of_job_posted'] : '',
+			'verified' => is_not_empty($post_data['verified']) ? $post_data['verified'] : '',
+			'status' => is_not_empty($post_data['status']) ? $post_data['status'] : '',
+			'logo' =>$employer_logo_file_path
+			);
+			
+			$where_data = array(
+				'id' => $post_data['id'],						
+			); 
+
+			if(count($update_array)>0)
+			{
+				$this->common_model->update_by_where_array('aicpe_employers',$where_data,$update_array);
+
+				$response = array('type'=>'success','msg'=>'Employees data updated successfully.');
+
+			}
+			
+		}
+		else
+		{
+			  if(!empty($_FILES['photo']['name']))
+			   {
+                    $config['upload_path']      = "uploads/employer_logo/";
+                    $config['allowed_types']    = "gif|jpg|png|jpeg";
+                    $config['encrypt_name']     =  true;
+                    $config['overwrite']        =  TRUE;
+                 
+                    $this->load->library('upload', $config);
+                    $this->upload->initialize($config);
+                    if(!$this->upload->do_upload('photo'))
+                    {
+                        $error  = array('error'  => $this->upload->display_errors());
+                    }
+                    else
+                    {
+                        $employer_logo_file  = $this->upload->data('file_name');
+                        $employer_logo_file_path = $config['upload_path'].$employer_logo_file;
+                    }
+               }
+               if(!empty($_FILES['employer_passport_photo']['name']))
+			   {
+                    $config['upload_path']      = "uploads/employer_passport_photo/";
+                    $config['allowed_types']    = "gif|jpg|png|jpeg";
+                    $config['encrypt_name']     =  true;
+                    $config['overwrite']        =  TRUE;
+                 
+                    $this->load->library('upload', $config);
+                    $this->upload->initialize($config);
+                    if(!$this->upload->do_upload('employer_passport_photo'))
+                    {
+                        $error  = array('error'  => $this->upload->display_errors());
+                    }
+                    else
+                    {
+                        $employer_passport_photo_file  = $this->upload->data('file_name');
+                        $employer_passport_photo_file_path = $config['upload_path'].$employer_passport_photo_file;
+                    }
+               }
+               if(!empty($_FILES['upload_photo_id']['name']))
+			   {
+                    $config['upload_path']      = "uploads/upload_photo_id/";
+                    $config['allowed_types']    = "gif|jpg|png|jpeg";
+                    $config['encrypt_name']     =  true;
+                    $config['overwrite']        =  TRUE;
+                 
+                    $this->load->library('upload', $config);
+                    $this->upload->initialize($config);
+                    if(!$this->upload->do_upload('upload_photo_id'))
+                    {
+                        $error  = array('error'  => $this->upload->display_errors());
+                    }
+                    else
+                    {
+                        $upload_photo_id_file  = $this->upload->data('file_name');
+                        $upload_photo_id_file_path = $config['upload_path'].$upload_photo_id_file;
+                    }
+               }
+			$insert_data = array(
+
+				'employer_code' => is_not_empty($post_data['employer_code']) ? $post_data['employer_code'] : '',
+				'employer_name' => is_not_empty($post_data['employer_name']) ? $post_data['employer_name'] : '',
+				'company_name' => is_not_empty($post_data['company_name']) ? $post_data['company_name'] : '',
+				'designation' => is_not_empty($post_data['designation']) ? $post_data['designation'] : '',
+				'mobile_no' => is_not_empty($post_data['mobile_no']) ? $post_data['mobile_no'] : '',
+				'whatsapp_no' => isset($post_data['whatsapp_no']) ? $post_data['whatsapp_no'] : '',
+				'email' => is_not_empty($post_data['email']) ? $post_data['email'] : '',
+				'username' => is_not_empty($post_data['username']) ? $post_data['username'] : '',
+				'password' => is_not_empty($post_data['password']) ? $post_data['password'] : '',
+				'gender' => is_not_empty($post_data['gender']) ? $post_data['gender'] : '',
+				'date_of_birth' => is_not_empty($post_data['date_of_birth']) ? format_date($post_data['date_of_birth'],'Y-m-d') : '',
+				'permanant_address' => is_not_empty($post_data['permanant_address']) ? $post_data['permanant_address'] : '',
+				'temporary_address' => is_not_empty($post_data['temporary_address']) ? $post_data['temporary_address'] : '',
+				'photo_id_type' => is_not_empty($post_data['photo_id_type']) ? $post_data['photo_id_type'] : '',
+				'country' => is_not_empty($post_data['country']) ? $post_data['country'] : '',
+				'state' => is_not_empty($post_data['state']) ? $post_data['state'] : '',
+				'city' => is_not_empty($post_data['city']) ? $post_data['city'] : '',
+				'pin_code' => is_not_empty($post_data['pin_code']) ? $post_data['pin_code'] : '',
+				'logo' =>$employer_logo_file_path,
+				'employer_passport_photo' =>$employer_passport_photo_file_path,
+				'upload_photo_id' =>$upload_photo_id_file_path,
+				'inserted_date' => get_inserted_date_time(),
+				'inserted_by' =>'1',
+				
+			);
+
+			if(count($insert_data)>0)
+			{
+				$inserted_id = $this->common_model->insert_all('aicpe_employers',$insert_data);
+				
+				$response = array('type'=>'success','msg'=>'Employees added successfully.');
+			}
+		}
+		
+		echo json_encode($response);
+	}
+
+	/*
+	@Description  : library books category list
+	@Author       : Varsha wankhede
+	@Date         : 25-06-2021
+	*/
 
 	public function library_books_categories(){
-		$this->load->view('admin/institution/library_books_categories');
+		
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+
+		$data['data'] = $this->Institution_model->get_library_books_categories('data',$where_data);
+	 	
+		$data['total_records'] =  $this->Institution_model->get_library_books_categories('count',$where_data);
+		 // Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-library-books-categories/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/library_books_categories',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/library_books_categories_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+
+		//$this->load->view('admin/institution/library_books_categories');
 	}
 
-	public function library_books(){
-		$this->load->view('admin/institution/library_books');
+	/*
+	@Description  : library books category export
+	@Author       : Varsha wankhede
+	@Date         : 25-06-2021
+	*/
+
+	public function export_library_books_categories()
+    {
+            
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+            "sort_by"        => $this->get_page_vars('sort_by', 'id'),
+            "sort_direction" => $this->get_page_vars('sort_direction', 'ASC'),
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_library_books_categories('data',$where_data);
+       
+        $filename  = 'Institutions_aicpe_library_books_categories'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        $header[] = 'Book Category';
+        $header[] = 'Inserte Date';
+        
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+                $rows   = array();
+               
+                $rows[] = get_value($row,'book_category','-');
+                $rows[] = format_date($row['inserted_date'],'Y-m-d');
+               
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'AICPE Book Category');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+
+    /*
+	@Description  : library books category delete
+	@Author       : Varsha wankhede
+	@Date         : 25-06-2021
+	*/
+
+    public function delete_library_books_categories()
+	{
+		$user_id          = $this->log_in_user_id;
+        $id               = $this->input->post('id');
+        
+        if($this->Institution_model->delete_library_books_categories($id,$user_id))
+        {
+            $message = array(
+                'type' => 'success',
+                'msg'  => 'Book Category deleted successfully'
+            );
+        }
+        else
+        {
+            $message = array(
+                'type' => 'error',
+                'msg'  => 'Something Went Wrong!'
+            );
+        }
+        echo json_encode($message);
+        exit;
+
 	}
+
+	/*
+	@Description  : library books category edit
+	@Author       : Varsha wankhede
+	@Date         : 25-06-2021
+	*/
+
+	public function edit_library_books_categories()
+    {
+        $id =  $this->input->post('id');
+       
+    	$message = array(
+                    'type' => 'error',
+                    'msg'  => 'Something went wrong!'
+                );
+
+        if(isset($id) && $id != '')
+        {        	
+        	$get_book_category_detail = $this->common_model->select_by_key('aicpe_library_books_categories',array('id' =>$id));
+
+        	$data['book_category_data'] = isset($get_book_category_detail[0]) && count($get_book_category_detail[0]) > 0 ? $get_book_category_detail[0] : array();
+        	
+        	$html =  parent::s_render('admin/institution/edit_library_books_categories_modal',$data,true);
+             
+             $message = array('type'=>'success',
+             	'view'=>$html
+         		);
+
+        }
+       
+        echo json_encode($message);
+    }
+
+    /*
+	@Description  : library books category save
+	@Author       : Varsha wankhede
+	@Date         : 25-06-2021
+	*/
+	public function save_library_books_categories()
+	{
+		$post_data = $this->input->post();
+		//pr($this->input->post());
+		$response = array('type'=>'error','msg'=>'Something went wrong! Please try again.');
+		$update_array = array();
+		
+		
+		if(!empty($this->input->post('id')) && $this->input->post('id') !== '')
+		{
+			$update_array = array(
+				'book_category' => is_not_empty($post_data['book_category']) ? $post_data['book_category'] : '',
+				'inserted_date' => get_inserted_date_time(),
+				'inserted_by' => $this->log_in_user_id
+			);
+			//pr($update_array);
+			$where_data = array(
+				'id' => $post_data['id'],						
+			); 
+
+			if(count($update_array)>0)
+			{
+				$this->common_model->update_by_where_array('aicpe_library_books_categories',$where_data,$update_array);
+
+				$response = array('type'=>'success','msg'=>'Book Category data updated successfully.');
+
+			}
+		}
+		else
+		{
+			$insert_data = array(
+
+				'book_category' => is_not_empty($post_data['book_category']) ? $post_data['book_category'] : '',
+				'inserted_date' => get_inserted_date_time(),
+				'inserted_by' => $this->log_in_user_id
+			);
+
+			if(count($insert_data)>0)
+			{
+				$inserted_id = $this->common_model->insert_all('aicpe_library_books_categories',$insert_data);
+				$response = array('type'=>'success','msg'=>'Books Category added successfully.');
+			}
+		}
+		
+		echo json_encode($response);
+	}
+
+	/*
+	@Description  : library books list details
+	@Author       : Varsha wankhede
+	@Date         : 28-06-2021
+	*/
+
+	public function library_books()
+	{
+
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+
+		$data['data'] = $this->Institution_model->get_library_books('data',$where_data);
+	 	
+		$data['total_records'] =  $this->Institution_model->get_library_books('count',$where_data);
+		/////////////////////////////
+		$data['category_list'] = $this->common_model->select_by_key('aicpe_library_books_categories',array('is_deleted'=>'0'));
+		////////////////////////////
+		// Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-library-books/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/library_books',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/library_books_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+		//$this->load->view('admin/institution/library_books');
+	}
+
+	/*
+	@Description  : library books list export
+	@Author       : Varsha wankhede
+	@Date         : 28-06-2021
+	*/
+
+	public function export_library_books()
+    {
+            
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+            "sort_by"        => $this->get_page_vars('sort_by', 'id'),
+            "sort_direction" => $this->get_page_vars('sort_direction', 'ASC'),
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_library_books('data',$where_data);
+       
+        $filename  = 'Institutions_aicpe_library_books'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        $header[] = 'Book Category';
+        $header[] = 'Book Name';
+        $header[] = 'Author Name';
+        $header[] = 'Pages';
+        $header[] = 'Price';
+        $header[] = 'Books Count';
+        $header[] = 'Available Count';
+        $header[] = 'Issued Count';
+        
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+                $rows   = array();
+               
+                $rows[] = get_value($row,'book_category','-');
+                $rows[] = get_value($row,'book_name','-');
+                $rows[] = get_value($row,'author_name','-');
+                $rows[] = get_value($row,'pages','-');
+                $rows[] = get_value($row,'price','-');
+                $rows[] = get_value($row,'book_count','-');
+                $rows[] = get_value($row,'available_count','-');
+                $rows[] = get_value($row,'issued_count','-');
+
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'AICPE library Books');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+
+    /*
+	@Description  : library books list save
+	@Author       : Varsha wankhede
+	@Date         : 28-06-2021
+	*/
+
+    public function save_library_books()
+	{
+		$post_data = $this->input->post();
+		//pr($this->input->post());
+		$response = array('type'=>'error','msg'=>'Something went wrong! Please try again.');
+		$update_array = array();
+
+		if(!empty($this->input->post('id')) && $this->input->post('id') !== '')
+		 {
+			$update_array = array(
+				
+				'book_name' => is_not_empty($post_data['book_name']) ? $post_data['book_name'] : '',
+				'author_name' => is_not_empty($post_data['author_name']) ? $post_data['author_name'] : '',
+				'pages' => is_not_empty($post_data['pages']) ? $post_data['pages'] : '',
+				'price' => is_not_empty($post_data['price']) ? $post_data['price'] : '',
+				'book_count' => is_not_empty($post_data['book_count']) ? $post_data['book_count'] : '',
+				'available_count' => is_not_empty($post_data['available_count']) ? $post_data['available_count'] : '',
+				'issued_count' => is_not_empty($post_data['issued_count']) ? $post_data['issued_count'] : '',
+				'inserted_date' => get_inserted_date_time(),
+				'inserted_by' => $this->log_in_user_id
+			);
+			
+			$where_data = array(
+				'id' => $post_data['id'],						
+			); 
+
+			if(count($update_array)>0)
+			{
+				$this->common_model->update_by_where_array('aicpe_library_books',$where_data,$update_array);
+
+				$response = array('type'=>'success','msg'=>'Book data updated successfully.');
+
+			}
+		 }
+		else
+		{
+			$insert_data = array(
+
+				'book_category_id' => is_not_empty($post_data['book_category_id']) ? $post_data['book_category_id'] : '',
+				'book_name' => is_not_empty($post_data['book_name']) ? $post_data['book_name'] : '',
+				'author_name' => is_not_empty($post_data['author_name']) ? $post_data['author_name'] : '',
+				'pages' => is_not_empty($post_data['pages']) ? $post_data['pages'] : '',
+				'price' => is_not_empty($post_data['price']) ? $post_data['price'] : '',
+				'book_count' => is_not_empty($post_data['book_count']) ? $post_data['book_count'] : '',
+				'inserted_date' => get_inserted_date_time(),
+				'inserted_by' => $this->log_in_user_id
+			);
+
+			if(count($insert_data)>0)
+			{
+				$inserted_id = $this->common_model->insert_all('aicpe_library_books',$insert_data);
+				$response = array('type'=>'success','msg'=>'Books added successfully.');
+			}
+		}
+		
+		echo json_encode($response);
+	}
+
+	/*
+	    @Description : Get Valid Student Data
+	    @Author      : Ankita Mandlik
+	    @Date        : 28-06-2021
+	*/
+
+	public function get_valid_student()
+	{
+		$search_term = $this->input->post('student_name');
+		pr1($search_term);
+		if($search_term !== '')
+		{
+			$student_data = $this->Institution_model->get_valid_student($search_term);
+
+			pr($student_data);
+		}
+	}
+
+	/*
+	@Description  : library books list delete
+	@Author       : Varsha wankhede
+	@Date         : 28-06-2021
+	*/
+
+	public function delete_library_books()
+	{
+		$user_id          = $this->log_in_user_id;
+        $id               = $this->input->post('id');
+        
+        if($this->Institution_model->delete_library_books($id,$user_id))
+        {
+            $message = array(
+                'type' => 'success',
+                'msg'  => 'Books deleted successfully'
+            );
+
+        }
+        else
+        {
+            $message = array(
+                'type' => 'error',
+                'msg'  => 'Something Went Wrong!'
+            );
+        }
+        echo json_encode($message);
+        exit;
+
+	}
+
+	/*
+	@Description  : library books list edit
+	@Author       : Varsha wankhede
+	@Date         : 28-06-2021
+	*/
+
+	public function edit_library_books()
+    {
+        $id =  $this->input->post('id');
+       
+    	$message = array(
+                    'type' => 'error',
+                    'msg'  => 'Something went wrong!'
+                );
+    	/////////////////////////////
+		$data['category_list'] = $this->common_model->select_by_key('aicpe_library_books_categories',array('is_deleted'=>'0'));
+		////////////////////////////
+
+        if(isset($id) && $id != '')
+        {        	
+        	$get_book_detail = $this->common_model->select_by_key('aicpe_library_books',array('id' =>$id));
+
+        	$data['book_data'] = isset($get_book_detail[0]) && count($get_book_detail[0]) > 0 ? $get_book_detail[0] : array();
+        	
+        	$html =  parent::s_render('admin/institution/edit_library_books_modal',$data,true);
+             
+             $message = array('type'=>'success',
+             	'view'=>$html
+         		);
+
+        }
+       
+        echo json_encode($message);
+    }
+
+    /*
+	@Description  : library books block
+	@Author       : Varsha wankhede
+	@Date         : 28-06-2021
+	*/
+
+	public function block_library_books()
+	{
+		$user_id          = $this->log_in_user_id;
+        $id               = $this->input->post('id');
+        //pr($this->input->post('id'));
+        if($this->Institution_model->block_library_books($id,$user_id))
+        {
+            $message = array(
+                'type' => 'success',
+                'msg'  => 'Books blocked successfully'
+            );
+
+        }
+        else
+        {
+            $message = array(
+                'type' => 'error',
+                'msg'  => 'Something Went Wrong!'
+            );
+        }
+        echo json_encode($message);
+        exit;
+
+	}
+
+	 /*
+	@Description  : library books issue list
+	@Author       : Varsha wankhede
+	@Date         : 28-06-2021
+	*/
 
 	public function library_books_issued(){
-		$this->load->view('admin/institution/library_books_issued');
+
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+
+		$data['data'] = $this->Institution_model->get_library_books_issued('data',$where_data);
+	 	
+		$data['total_records'] =  $this->Institution_model->get_library_books_issued('count',$where_data);
+		
+		
+		// Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-library-books-issued/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/library_books_issued',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/library_books_issued_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+		//$this->load->view('admin/institution/library_books_issued');
 	}
 
 	public function library_books_return(){
@@ -2339,6 +3250,12 @@ class Institutions extends MY_Controller{
 	public function library_e_books(){
 		$this->load->view('admin/institution/library_e_books');
 	}
+
+	/*
+	@Description  :  list of Staff list
+	@Author       : Varsha wankhede
+	@Date         : 15-06-2021
+	*/
 
 	public function staff_list(){
 		
@@ -2360,7 +3277,7 @@ class Institutions extends MY_Controller{
         ); 
 	
 		$data['data'] = $this->Institution_model->get_staff_management_list('data',$where_data);
-		
+		//pr($data['data']);
 		$data['total_records'] =  $this->Institution_model->get_staff_management_list('count',$where_data);
 
 		$data['gender_array']= array(
@@ -2394,6 +3311,13 @@ class Institutions extends MY_Controller{
         $this->set_pagination($page_config);
 		//$this->load->view('admin/institution/staff_management');
 	}
+
+	/*
+	@Description  :  export Staff list
+	@Author       : Varsha wankhede
+	@Date         : 15-06-2021
+	*/
+
 	public function staff_list_export()
     {
         
@@ -2451,8 +3375,9 @@ class Institutions extends MY_Controller{
         $message = json_encode(base_url().'uploads/temp/'.$filename);
         echo $message;
     }
+
     /*
-	@Description  :  delete Staff list
+	@Description  : delete Staff list
 	@Author       : Varsha wankhede
 	@Date         : 15-06-2021
 	*/
@@ -2482,9 +3407,9 @@ class Institutions extends MY_Controller{
 
     /*
     @Author      : Varsha Wankhede
-    @Input       : 
+    @Input       : edit staff list
     @Output      : 
-    @Date        : 27-05-2021
+    @Date        : 18-06-2021
     */
 
     public function edit_staff_list()
@@ -2527,7 +3452,8 @@ class Institutions extends MY_Controller{
        
         echo json_encode($message);
     }
-     /*
+
+    /*
 	@Description  : save staff managment list
 	@Author       : Varsha wankhede
 	@Date         : 18-06-2021
@@ -2545,7 +3471,7 @@ class Institutions extends MY_Controller{
 		{
 			   if(!empty($_FILES['photo']['name']))
 			   {
-                    $config['upload_path']      = "uploads/staff_document";
+                    $config['upload_path']      = "uploads/staff_document/";
                     $config['allowed_types']    = "gif|jpg|png|jpeg";
                     $config['encrypt_name']     =  true;
                     $config['overwrite']        =  TRUE;
@@ -2568,7 +3494,7 @@ class Institutions extends MY_Controller{
 
 			   if(!empty($_FILES['photo_id']['name']))
 			   {
-                    $config['upload_path']      = "uploads/staff_id_document";
+                    $config['upload_path']      = "uploads/staff_id_document/";
                     $config['allowed_types']    = "gif|jpg|png|jpeg";
                     $config['encrypt_name']     =  true;
                     $config['overwrite']        =  TRUE;
@@ -2731,6 +3657,14 @@ class Institutions extends MY_Controller{
 			"start_date"     => $data['start_date'],           
 			"end_date"       => $data['end_date'],         
         ); 
+
+        $data['incentive_pattern_array']=array(
+
+        						'per_admission'=>'Per Admission',
+        						'total_bussiness'=>'Total Bussiness',
+        						'total_collection'=>'Total Collection',
+
+        						);
 	
 		$data['data'] = $this->Institution_model->get_staff_incentives('data',$where_data);
 		
@@ -2753,9 +3687,479 @@ class Institutions extends MY_Controller{
 
 		//$this->load->view('admin/institution/staff_incentives');
 	}
+	/*
+    @Author      : Varsha Wankhede
+    @Input       : export OF STAFF INCENTIVES
+    @Output      : 
+    @Date        : 16-06-2021
+    */
+	public function staff_incentives_export()
+    {
+            
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+            "sort_by"        => $this->get_page_vars('sort_by', 'id'),
+            "sort_direction" => $this->get_page_vars('sort_direction', 'ASC'),
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_staff_incentives('data',$where_data);
+        
+        $filename  = 'Institutions_aicpe_staff_incentives'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        $header[] = 'staff name';
+        $header[] = 'mobile no';
+        $header[] = 'email';
+        $header[] = 'task assign date';
+        $header[] = 'task';
+        $header[] = 'description';
+        
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+                $rows   = array();
+               
+                $rows[] = get_value($row,'staff_name','-');
+                $rows[] = get_value($row,'mobile_no','-');
+                $rows[] = get_value($row,'email','-');
+                $rows[] = format_date($row['task_assign_date']);
+                $rows[] = get_value($row,'task','-');          
+                $rows[] = get_value($row,'description','-');
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'AICPE Staff Incentive');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+
+	/*
+	@Description  : delete staff incentives
+	@Author       : Varsha wankhede
+	@Date         : 22-06-2021
+	*/
+
+	public function delete_staff_incentives()
+    {  
+        $user_id          = $this->log_in_user_id;
+        $id               = $this->input->post('id');
+        
+        if($this->Institution_model->delete_staff_incentives($id,$user_id))
+        {
+            $message = array(
+                'type' => 'success',
+                'msg'  => 'Staff Incentives deleted successfully'
+            );
+        }
+        else
+        {
+            $message = array(
+                'type' => 'error',
+                'msg'  => 'Something Went Wrong!'
+            );
+        }
+        echo json_encode($message);
+        exit;
+    }
+
+    /*
+    @Author      : Varsha Wankhede
+    @Input       : edit STAFF INCENTIVES
+    @Output      : 
+    @Date        : 22-06-2021
+    */
+
+    public function edit_staff_incentives()
+    {
+        $id =  $this->input->post('id');
+       
+    	$message = array(
+                    'type' => 'error',
+                    'msg'  => 'Something went wrong!'
+                );
+   
+        if(isset($id) && $id != '')
+        {        	
+        	$incentives_data = $this->Institution_model->edit_staff_incentives_modal($id);
+        	$data['incentives_data'] = isset($incentives_data[0]) ? $incentives_data[0] : array();
+        	
+        	$html =  parent::s_render('admin/institution/edit_staff_incentives_modal',$data,true);
+             
+            $message = array('type'=>'success',
+             	'view'=>$html
+         		);
+        }
+       
+        echo json_encode($message);
+    }
+    /*
+	@Description  : save staff incentive 
+	@Author       : Varsha wankhede
+	@Date         : 23-06-2021
+	*/
+
+   public function save_staff_incentives()
+	{
+		$post_data = $this->input->post();
+		
+		$response = array('type'=>'error','msg'=>'Something went wrong! Please try again.');
+
+		if(!empty($this->input->post('id')) && $this->input->post('id') !== '')
+		{
+
+			$update_array_1 = array();
+			$update_array_2 = array();
+              
+			$update_array_1 = array(
+				'staff_name' => is_not_empty($post_data['staff_name']) ? $post_data['staff_name'] : '',
+				'mobile_no' => is_not_empty($post_data['mobile_no']) ? $post_data['mobile_no'] : '',
+				'email' => is_not_empty($post_data['email']) ? $post_data['email'] : '',
+			);
+			
+			$where_data = array(
+				'id' => $post_data['staff_id'],						
+			);
+			
+			if(count($update_array_1)>0)
+			{
+				$this->common_model->update_by_where_array('aicpe_staff_managment',$where_data,$update_array_1);
+			}
+			$update_array_2 = array(
+
+				'task_assign_date' => is_not_empty($post_data['task_assign_date']) ? format_date($post_data['task_assign_date'],'d-m-y') : '',
+				'task' => is_not_empty($post_data['task']) ? $post_data['task'] : '',
+				'description' => is_not_empty($post_data['description']) ? $post_data['description'] : '',
+			);
+
+			$where_data = array(
+				'id' => $post_data['id'],						
+			); 
+
+			if(count($update_array_2)>0)
+			{
+				$this->common_model->update_by_where_array('aicpe_staff_incentives',$where_data,$update_array_2);
+			}
+			
+			$response = array('type'=>'success','msg'=>'Staff incentive data updated successfully.');
+	
+			
+		}
+		else
+		{ 
+			$insert_data_1 =array();
+			$insert_data_2 =array();
+
+			$insert_data_1 = array(
+				'staff_name' => is_not_empty($post_data['staff_name']) ? $post_data['staff_name'] : '',
+				'mobile_no' => is_not_empty($post_data['mobile_no']) ? $post_data['mobile_no'] : '',
+				'email' => is_not_empty($post_data['email']) ? $post_data['email'] : '',
+				'inserted_date' => get_inserted_date_time(),
+			);
+			
+			if(count($insert_data_1)>0)
+			{
+				$inserted_id = $this->common_model->insert_all('aicpe_staff_managment',$insert_data_1);
+				
+			}
+			$insert_data_2 = array(
+				'incentive_pattern' => is_not_empty($post_data['incentive_pattern']) ? $post_data['incentive_pattern']:'',
+				'incentive_amount' => is_not_empty($post_data['incentive_amount']) ? $post_data['incentive_amount'] : '',
+				'task_assign_date' => is_not_empty($post_data['task_assign_date']) ? format_date($post_data['task_assign_date'],'Y-m-d'): NULL,
+				'task' => is_not_empty($post_data['task']) ? $post_data['task'] : '',
+				'description' => is_not_empty($post_data['description']) ? $post_data['description'] : '',
+				'inserted_date' => get_inserted_date_time(),
+				'staff_id' => $inserted_id,
+			);
+
+			if(count($insert_data_2)>0)
+			{
+				$inserted_id = $this->common_model->insert_all('aicpe_staff_incentives',$insert_data_2);
+				
+			}
+			//pr($response);
+			$response = array('type'=>'success','msg'=>'Staff incentive data updated successfully.');
+			
+		}
+		
+		echo json_encode($response);
+	}
+
+	/*
+    @Author      : Varsha Wankhede
+    @Input       : list STAFF task
+    @Output      : 
+    @Date        : 25-06-2021
+    */
 
 	public function staff_tasks(){
-		$this->load->view('admin/institution/staff_tasks');
+		
+		$data["per_page_option"] = $this->per_page_option;
+		$data["per_page"]        = $this->get_page_vars('per_page', 10);
+		$data["page"]            = $this->get_page_vars('page','',$this->page_segment);        
+		$data['search']          = $this->get_request_params('search','');
+		$data['start_date']      = $this->get_request_params('start_date','');
+		$data['end_date']        = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+			"sort_by"        => $this->get_page_vars('sort_by', 'id'),
+			"sort_direction" => $this->get_page_vars('sort_direction', 'DESC'),
+			"per_page"       => $data["per_page"],
+			"page"           => $this->get_page_vars('page', '', $this->page_segment),
+			"search"         => $data['search'],       
+			"start_date"     => $data['start_date'],           
+			"end_date"       => $data['end_date'],         
+        ); 
+
+        $data['incentive_pattern_array']=array(
+
+        						'per_admission'=>'Per Admission',
+        						'total_bussiness'=>'Total Bussiness',
+        						'total_collection'=>'Total Collection',
+
+        						);
+	
+		$data['data'] = $this->Institution_model->get_staff_task('data',$where_data);
+		
+		$data['total_records'] =  $this->Institution_model->get_staff_task('count',$where_data);
+		
+		 // Set page configs
+        $page_config = array(
+            'paging_url'        => 'institutions-staff-tasks/',
+            'page_segment'      => $this->page_segment,
+            'per_page'          => $this->get_page_vars('per_page', 10),
+            'total_records'     => $data['total_records'],
+            'list'              => 'admin/institution/staff_tasks',
+            'default_sort'      => 'id',
+            'default_direction' => 'desc',
+            'list_ajax'         => 'admin/institution/staff_tasks_ajax',
+            'data'              => $data
+        );
+
+        $this->set_pagination($page_config);
+		//$this->load->view('admin/institution/staff_tasks');
+	}
+
+	/*
+    @Author      : Varsha Wankhede
+    @Input       : export STAFF task
+    @Output      : 
+    @Date        : 25-06-2021
+    */
+
+	public function staff_tasks_export()
+    {
+            
+        $data['search']     = $this->get_request_params('search','');
+        $data['start_date'] = $this->get_request_params('start_date','');
+        $data['end_date']   = $this->get_request_params('end_date','');
+
+        $where_data =   array(
+            "sort_by"        => $this->get_page_vars('sort_by', 'id'),
+            "sort_direction" => $this->get_page_vars('sort_direction', 'ASC'),
+            "search"         => $data['search'],           
+            "start_date"     => $data['start_date'],           
+            "end_date"       => $data['end_date'],           
+        ); 
+    
+        $report_list = $this->Institution_model->get_staff_task('data',$where_data);
+        
+        $filename  = 'Institutions_aicpe_staff_task'.time().'.xls';
+        $file_path = './uploads/temp/'.$filename;       
+
+        $header   = array();
+        $header[] = 'staff name';
+        $header[] = 'mobile no';
+        $header[] = 'email';
+        $header[] = 'task assign date';
+        $header[] = 'task';
+        $header[] = 'description';
+        
+        $row_data = array();
+
+        if(!empty($report_list))
+        {
+            foreach($report_list as $key => $row)
+            {
+                $rows   = array();
+               
+                $rows[] = get_value($row,'staff_name','-');
+                $rows[] = get_value($row,'mobile_no','-');
+                $rows[] = get_value($row,'email','-');
+                $rows[] = format_date($row['task_assign_date']);
+                $rows[] = get_value($row,'task','-');          
+                $rows[] = get_value($row,'description','-');
+                $row_data[] = $rows;
+            }
+        }
+
+        write_excel($file_path, $header, $row_data, 'AICPE Staff Task');
+       
+        $message = json_encode(base_url().'uploads/temp/'.$filename);
+        echo $message;
+    }
+
+    /*
+    @Author      : Varsha Wankhede
+    @Input       : delete STAFF task
+    @Output      : 
+    @Date        : 25-06-2021
+    */
+
+	public function delete_staff_tasks()
+    {  
+        $user_id          = $this->log_in_user_id;
+        $id               = $this->input->post('id');
+        
+        if($this->Institution_model->delete_staff_task($id,$user_id))
+        {
+            $message = array(
+                'type' => 'success',
+                'msg'  => 'Staff Task deleted successfully'
+            );
+        }
+        else
+        {
+            $message = array(
+                'type' => 'error',
+                'msg'  => 'Something Went Wrong!'
+            );
+        }
+        echo json_encode($message);
+        exit;
+    }
+
+    /*
+    @Author      : Varsha Wankhede
+    @Input       : edit STAFF task
+    @Output      : 
+    @Date        : 25-06-2021
+    */
+
+    public function edit_staff_tasks()
+    {
+        $id =  $this->input->post('id');
+       
+    	$message = array(
+                    'type' => 'error',
+                    'msg'  => 'Something went wrong!'
+                );
+   
+        if(isset($id) && $id != '')
+        {        	
+        	$incentives_data = $this->Institution_model->edit_staff_task_modal($id);
+        	$data['incentives_data'] = isset($incentives_data[0]) ? $incentives_data[0] : array();
+        	
+        	$html =  parent::s_render('admin/institution/edit_staff_task_modal',$data,true);
+             
+            $message = array('type'=>'success',
+             	'view'=>$html
+         		);
+        }
+       
+        echo json_encode($message);
+    }
+    /*
+	@Description  : save staff task 
+	@Author       : Varsha wankhede
+	@Date         : 24-06-2021
+	*/
+
+   public function save_staff_tasks()
+	{
+		$post_data = $this->input->post();
+		
+		$response = array('type'=>'error','msg'=>'Something went wrong! Please try again.');
+
+		if(!empty($this->input->post('id')) && $this->input->post('id') !== '')
+		{
+
+			$update_array_1 = array();
+			$update_array_2 = array();
+              
+			$update_array_1 = array(
+				'staff_name' => is_not_empty($post_data['staff_name']) ? $post_data['staff_name'] : '',
+				'mobile_no' => is_not_empty($post_data['mobile_no']) ? $post_data['mobile_no'] : '',
+				'email' => is_not_empty($post_data['email']) ? $post_data['email'] : '',
+			);
+			
+			$where_data = array(
+				'id' => $post_data['staff_id'],						
+			);
+			
+			if(count($update_array_1)>0)
+			{
+				$this->common_model->update_by_where_array('aicpe_staff_managment',$where_data,$update_array_1);
+			}
+			$update_array_2 = array(
+
+				'task_assign_date' => is_not_empty($post_data['task_assign_date']) ? format_date($post_data['task_assign_date'],'d-m-y') : '',
+				'task' => is_not_empty($post_data['task']) ? $post_data['task'] : '',
+				'description' => is_not_empty($post_data['description']) ? $post_data['description'] : '',
+			);
+
+			$where_data = array(
+				'id' => $post_data['id'],						
+			); 
+
+			if(count($update_array_2)>0)
+			{
+				$this->common_model->update_by_where_array('aicpe_staff_incentives',$where_data,$update_array_2);
+			}
+			
+			$response = array('type'=>'success','msg'=>'Staff incentive data updated successfully.');
+	
+			
+		}
+		else
+		{ 
+			$insert_data_1 =array();
+			$insert_data_2 =array();
+
+			$insert_data_1 = array(
+				'staff_name' => is_not_empty($post_data['staff_name']) ? $post_data['staff_name'] : '',
+				'mobile_no' => is_not_empty($post_data['mobile_no']) ? $post_data['mobile_no'] : '',
+				'email' => is_not_empty($post_data['email']) ? $post_data['email'] : '',
+				'inserted_date' => get_inserted_date_time(),
+			);
+			
+			if(count($insert_data_1)>0)
+			{
+				$inserted_id = $this->common_model->insert_all('aicpe_staff_managment',$insert_data_1);
+				
+			}
+			$insert_data_2 = array(
+				'incentive_pattern' => is_not_empty($post_data['incentive_pattern']) ? $post_data['incentive_pattern']:'',
+				'incentive_amount' => is_not_empty($post_data['incentive_amount']) ? $post_data['incentive_amount'] : '',
+				'task_assign_date' => is_not_empty($post_data['task_assign_date']) ? format_date($post_data['task_assign_date'],'Y-m-d'): NULL,
+				'task' => is_not_empty($post_data['task']) ? $post_data['task'] : '',
+				'description' => is_not_empty($post_data['description']) ? $post_data['description'] : '',
+				'inserted_date' => get_inserted_date_time(),
+				'staff_id' => $inserted_id,
+			);
+
+			if(count($insert_data_2)>0)
+			{
+				$inserted_id = $this->common_model->insert_all('aicpe_staff_incentives',$insert_data_2);
+				
+			}
+			//pr($response);
+			$response = array('type'=>'success','msg'=>'Staff incentive data updated successfully.');
+			
+		}
+		
+		echo json_encode($response);
 	}
 
 	public function wallet(){

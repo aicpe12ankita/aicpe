@@ -1,6 +1,5 @@
 <div class="col-12 mb-4 data-table-rows data-tables-hide-filter">
-    <table id="dataTableRows01" class="data-table responsive nowrap data-table-standard"
-        data-order="[[ 1, &quot;desc&quot; ]]">
+    <table  class="custom_table table">
         <thead>
            <tr>
                 <th>Sr. No.</th>
@@ -40,7 +39,7 @@
 
                     <a href="javascript:void(0);" class="btn btn-xs btn-primary mb-1" onclick="edit_assignment_by_id(<?php echo $row['id']?>);"><i class="simple-icon-note"></i></a>
 
-                    <a href="#" class="btn btn-xs btn-danger mb-1"><i class="simple-icon-trash"></i></a>
+                    <a href="javascript:void(0);" class="btn btn-xs btn-danger mb-1" onclick="delete_assignment_by_id(<?= $row['id']?>);"><i class="simple-icon-trash"></i></a>
                     
                 
                 </td>
