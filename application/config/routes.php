@@ -206,6 +206,7 @@ $route['institutions-staff-list/(:num)']= 'Institutions/staff_list/$1';
 $route['export-institutions-staff-list']['post']= 'Institutions/staff_list_export';
 $route['delete-institutions-staff-list']['post']= 'Institutions/delete_staff_list';
 $route['edit-institutions-staff-list']= 'Institutions/edit_staff_list';
+$route['save-institutions-staff-list']= 'Institutions/save_staff_list';
 
 $route['institutions-staff-incentives']= 'Institutions/staff_incentives';
 $route['institutions-staff-incentives/(:/num)']= 'Institutions/staff_incentives/$1';

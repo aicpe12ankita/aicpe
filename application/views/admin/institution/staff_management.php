@@ -5,8 +5,7 @@
             <div class="col-12">
                 <h1>Staff Management</h1>
                 <div class="text-zero top-right-button-container">
-                  <button type="button" class="btn btn-primary btn-lg top-right-button mr-1" data-toggle="modal" data-target="#addEnquiry">ADD NEW </button>
-                           
+                  <button type="button" class="btn btn-primary btn-lg top-right-button mr-1" data-toggle="modal" data-target="#add_staff_managment">ADD NEW </button>
                 </div>
                 <div class="separator mb-5"></div>
             </div>
@@ -93,19 +92,190 @@
                             <div class="separator"></div>
                         </div>
                     </div>
-                    <div class="row">
+                    <div class="row" id="ajax_data">
                        <?php $this->load->view('admin/institution/staff_management_list_ajax.php');?>
                     </div>
                 </div>
             </div>
         </div>
 </main>
- <div class="modal fade modal-right" id="staff_managment_list" tabindex="-1" role="dialog" aria-labelledby="addEnquiry" aria-hidden="true">
-    
+ <div class="modal fade modal-right" id="staff_managment_list" tabindex="-1" role="dialog" aria-labelledby="" aria-hidden="true">
   </div>
+   <div class="modal fade modal-right" id="add_staff_managment" tabindex="-1" role="dialog" aria-labelledby="" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+          <div class="modal-header custom-modal">
+              <h5 class="modal-title white">Add Staff Managment Details</h5>
+              <button type="button" class="close white" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button>
+          </div>
+            <form id="add_staff_list_form" name="add_staff_list_form" method="post" enctype="multipart/form-data"  role="form" onsubmit="return false;">
+          <div class="modal-body">
+              <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" class="form-control" name="staff_name">
+              </div>
+              <div class="form-group">
+                  <label>Mobile No</label>
+                  <input type="text" class="form-control" name="mobile_no" min="10" max="10">
+              </div>
+               <div class="form-group">
+                  <label>Alternate Mobile No</label>
+                  <input type="text" class="form-control" name="alternate_mobile_no" min="10" max="10">
+              </div>
+              <div class="form-group">
+                  <label>Whats App No</label>
+                  <input type="text" class="form-control" name="whatapp_no" min="10" max="10">
+              </div>
+              <div class="form-group">
+                  <label>Email</label>
+                  <input type="email" class="form-control" name="email">
+              </div>
+              <div class="form-group">
+                <label>Gender</label>
+                <select value="" name="gender" class="form-control">
+                  <option>--- Select Gender---</option>
+                  <?php foreach($gender_array as $key => $value){?>
+                  <option value="<?= $key?>"><?= $value ?></option>
+                <?php }?>
+                </select>
+
+              
+              </div>
+              <div class="form-group">
+                <label>Date Of Birth</label>
+                <div class="input-group">
+                    <div class="input-group date">
+                      <span class="input-group-text input-group-append input-group-addon">
+                            <i class="simple-icon-calendar"></i>
+                      </span>
+                      <input type="text" class="form-control" name="date_of_birth" value="" >
+                    </div>
+                </div>
+              </div>
+               <div class="form-group">
+                  <label>Temporary Address</label>
+                  <textarea name="temporary_address" class="form-control"></textarea>
+              </div>
+              <div class="form-group">
+                  <label>Permanent Address</label>
+                  <textarea name="permanant_address" class="form-control" ></textarea>
+              </div>
+              <div class="form-group">
+                  <label>Country</label>
+                  <input type="text" class="form-control" name="country">
+              </div>
+              <div class="form-group">
+                  <label>State</label>
+                  <input type="text" class="form-control" name="state">
+              </div>
+              <div class="form-group">
+                  <label>City</label>
+                 <input type="text" class="form-control" name="city">
+              </div>
+              <div class="form-group">
+                  <label>Pin Code</label>
+                  <input type="text" class="form-control" maxlength="6" name="pin_code" value="">
+              </div>
+              <div class="form-group">
+                  <label>Designation</label>
+                  <input type="text" class="form-control" name="designation" value="">
+              </div>
+              <div class="form-group">
+                  <label>Education Qualification</label>
+                  <input type="text" class="form-control" name="education_qualification" value="">
+              </div>
+              <div class="form-group">
+                  <label>Username</label>
+                  <input type="text" class="form-control" name="username" value="" >
+              </div>
+              <div class="form-group">
+                  <label>Password</label>
+                  <input type="text" class="form-control" name="password" value="">
+              </div>
+              <div class="form-group">
+                <label> Photo </label>
+                 <input type="file" value="" name="photo">
+              </div>
+              <div class="form-group">
+                  <label>Photo ID Type</label>
+                  <select class="form-control" name="photo_id_type">
+                     <option>--- Select Photo ID Type ---</option>
+                    <?php foreach($photo_type_array as $key => $value){ ?>
+                      <option value="<?= $key ?>"><?= $value ?></option>
+                      <?php } ?>
+                  </select>
+              </div>
+              <div class="form-group">
+                  <label>Photo ID No.</label>
+                  <input type="text" class="form-control" name="photo_id_no" value="" >
+              </div>
+              <div class="form-group">
+                <label>Upload Photo ID</label>
+                 <input type="file" value="" name="photo_id">
+              </div>
+              <div class="form-group">
+                  <label>Role </label>
+                  <input type="text" name="role" class="form-control" value="">
+              </div>
+              <div class="form-group">
+                  <label>Eligibility for incentive </label>
+                  <select class="form-control" name="eligibility_for_incentives">
+                    <option value="">-- select Eligibility for incentive --</option>
+                  <?php foreach($eligible_incentive as $key => $value ){?>
+                   
+                   <option value="<?= $key?>"><?= $value?></option>
+                   <?php } ?>
+                   </select>
+              </div>
+              
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">ADD</button>
+            <button type="button" class="btn btn-outline-primary"
+                  data-dismiss="modal">Cancel</button>
+              
+          </div>
+          </form>
+      </div>
+ </div>
+  </div>
+
 <?php $this->load->view('admin/includes/footer'); ?>
 <script type="text/javascript">
-  
+ $(document).ready(function(){  
+  $('#add_staff_list_form').on('submit',function(event){
+
+    event.preventDefault();
+  //var brand_name = $('#brand_name').val().trim();
+   var formdata = new FormData(this);
+
+       $.ajax({
+            url: '<?php echo base_url().'save-institutions-staff-list'; ?>',
+            type: 'POST',
+            dataType: 'json',
+            data: formdata,          
+          processData: false,
+          contentType: false,
+            beforeSend: function()
+            {
+                $(".main-loader").fadeIn();
+            },      
+            success:function(data)
+            {
+                $('#add_staff_managment').modal('hide');
+                toastr[data.type](data.msg);
+                page_update();
+            }   
+        });
+       return false;
+    });
+
+});
+</script>
+
+ <script type="text/javascript">
 ///////// PAGINATION SCRIPT START
     $("body").on("click",'ul.pagination li a.paginate_button',function(e)
     {
@@ -228,12 +398,8 @@ function page_update()
 
         $("body").on("change",'#per_page_option',function(e)
         {
-           
-           $("#per_page_value").val($(this).val());
-           $("pagination_page").val('1');
-            change_search_data("page",1)
-            change_search_data("per_page",$(this).val());
-            page_update();
+            $('#search-btn').trigger('click');
+             return false;
         });
       $("body").on("click",'#reset-btn',function(){
        
@@ -249,6 +415,7 @@ function page_update()
 
 <script type="text/javascript">
   $(document).ready(function(){
+
       $('body').on('click', '#export_report', function(){
     $.ajax({
       url:" <?php echo base_url().'export-institutions-staff-list'; ?>",
@@ -269,9 +436,8 @@ function page_update()
       },
       success: function( data )
       {
-
         window.location.href = data;
-      },
+      }
     });
   });
   });
@@ -297,7 +463,7 @@ function page_update()
                   {                    
                     toastr[response.type](response.msg);
                    
-                    page_update();
+                   page_update();
                   }else{
                     toastr[response.type](response.msg);
                   }
@@ -326,11 +492,10 @@ function page_update()
                 else
                 {
                     toastr['error']('Something went wrong! Please try again');
-                }
-              }
-
-                      
+                }  
+                } 
          });
+
  }
 
 </script>

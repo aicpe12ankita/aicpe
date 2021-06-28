@@ -2085,8 +2085,7 @@ class Institution_model extends CI_Model
 		{
 			$this->db->select(array(
 				'aicpe_exam_secret_code.*',
-				'aicpe_student.student_name
-',
+				'aicpe_student.student_name',
 				
 			));
 

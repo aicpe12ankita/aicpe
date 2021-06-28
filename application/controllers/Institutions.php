@@ -1320,6 +1320,7 @@ class Institutions extends MY_Controller{
              	'view'=>$html
          		);
         }
+        //pr($data);
        
         echo json_encode($message);
     }
@@ -1364,11 +1365,12 @@ class Institutions extends MY_Controller{
 				'course_name' => is_not_empty($post_data['course_name']) ? $post_data['course_name'] : '',
 				'assignment_title' => is_not_empty($post_data['assignment_title']) ? $post_data['assignment_title'] : '',
 				'description' => is_not_empty($post_data['description']) ? $post_data['description'] : '',
-				'submission_date' => isset($post_data['submission_date']) ? $post_data['submission_date'] : '',
+				'submission_date' => isset($post_data['submission_date']) ? format_date($post_data['submission_date'],'Y-m-d') : NULL,
+				'post_date' => isset($post_data['post_date']) ? format_date($post_data['post_date'],'Y-m-d') :NULL,
 				'faculty' => is_not_empty($post_data['faculty']) ? $post_data['faculty'] : '',
 				'assignment_document' =>  $assignment_document_file_path,
 			);
-						
+			//pr($update_array);			
 			$where_data = array(
 				'id' => $post_data['record_id'],						
 			); 
@@ -1411,9 +1413,9 @@ class Institutions extends MY_Controller{
 				'description' => is_not_empty($post_data['description']) ? $post_data['description'] : '',
 				'submission_date' => isset($post_data['submission_date']) ? $post_data['submission_date'] : '',
 				'faculty' => is_not_empty($post_data['faculty']) ? $post_data['faculty'] : '',
-				'assignment_document' =>  $assignment_document_file_path,
+				'assignment_document' => $assignment_document_file_path,
 			);
-
+			
 			if(count($insert_data)>0)
 			{
 				$inserted_id = $this->common_model->insert_all('aicpe_assignment',$insert_data);
@@ -2360,6 +2362,21 @@ class Institutions extends MY_Controller{
 		$data['data'] = $this->Institution_model->get_staff_management_list('data',$where_data);
 		
 		$data['total_records'] =  $this->Institution_model->get_staff_management_list('count',$where_data);
+
+		$data['gender_array']= array(
+    					'male' => 'Male',
+    					'female' => 'Female',
+    					'others' => 'Others',
+    			);
+    	$data['photo_type_array'] = array(
+						'adhar_card' => 'Adhar card',
+						'pan_card' => 'Pan card',
+						'driving_licence' => 'Driving Licence',
+				);
+    	$data['eligible_incentive'] = array(
+						'1' => 'YES',
+						'0' => 'NO',
+				);
 		
 		 // Set page configs
         $page_config = array(
@@ -2478,12 +2495,27 @@ class Institutions extends MY_Controller{
                     'type' => 'error',
                     'msg'  => 'Something went wrong!'
                 );
+
+    	$data['gender_array']= array(
+    					'male' => 'Male',
+    					'female' => 'Female',
+    					'others' => 'Others',
+    			);
+    	$data['photo_type_array'] = array(
+						'adhar_card' => 'Adhar card',
+						'pan_card' => 'Pan card',
+						'driving_licence' => 'Driving Licence',
+				);
+    	$data['eligible_incentive'] = array(
+						'1' => 'YES',
+						'0' => 'NO',
+				);
     	
         if(isset($id) && $id != '')
         {        	
         	$get_staff_detail = $this->common_model->select_by_key('aicpe_staff_managment',array('id' =>$id));
 
-        	$data['student_data'] = isset($get_staff_detail[0]) && count($get_staff_detail[0]) > 0 ? $get_staff_detail[0] : array();
+        	$data['staff_data'] = isset($get_staff_detail[0]) && count($get_staff_detail[0]) > 0 ? $get_staff_detail[0] : array();
         	
         	
         	$html =  parent::s_render('admin/institution/staff_managment_list_modal',$data,true);
@@ -2495,6 +2527,184 @@ class Institutions extends MY_Controller{
        
         echo json_encode($message);
     }
+     /*
+	@Description  : save staff managment list
+	@Author       : Varsha wankhede
+	@Date         : 18-06-2021
+	*/
+
+   public function save_staff_list()
+	{
+		$post_data = $this->input->post();
+	
+		$response = array('type'=>'error','msg'=>'Something went wrong! Please try again.');
+
+		$update_array = array();
+		$staff_document_file_path = '';
+		if(!empty($this->input->post('id')) && $this->input->post('id') !== '')
+		{
+			   if(!empty($_FILES['photo']['name']))
+			   {
+                    $config['upload_path']      = "uploads/staff_document";
+                    $config['allowed_types']    = "gif|jpg|png|jpeg";
+                    $config['encrypt_name']     =  true;
+                    $config['overwrite']        =  TRUE;
+                 
+                    $this->load->library('upload', $config);
+                    $this->upload->initialize($config);
+                    if(!$this->upload->do_upload('photo'))
+                    {
+                        $error  = array('error'  => $this->upload->display_errors());
+                        
+                    }
+                    else
+                    {
+                        $staff_document_file  = $this->upload->data('file_name');
+                        $staff_document_file_path = $config['upload_path'].$staff_document_file;
+                    }
+                }
+
+                $staff_photo_id_file_path='';
+
+			   if(!empty($_FILES['photo_id']['name']))
+			   {
+                    $config['upload_path']      = "uploads/staff_id_document";
+                    $config['allowed_types']    = "gif|jpg|png|jpeg";
+                    $config['encrypt_name']     =  true;
+                    $config['overwrite']        =  TRUE;
+                 
+                    $this->load->library('upload', $config);
+                    $this->upload->initialize($config);
+                    if(!$this->upload->do_upload('photo_id'))
+                    {
+                        $error  = array('error'  => $this->upload->display_errors());
+                        
+                    }
+                    else
+                    {
+                        $staff_photo_id_file  = $this->upload->data('file_name');
+                        $staff_photo_id_file_path = $config['upload_path'].$staff_photo_id_file;
+                    }
+               }
+              
+			$update_array = array(
+				'staff_name' => is_not_empty($post_data['staff_name']) ? $post_data['staff_name'] : '',
+				'mobile_no' => is_not_empty($post_data['mobile_no']) ? $post_data['mobile_no'] : '',
+				'alternate_mobile_no' => is_not_empty($post_data['alternate_mobile_no']) ? $post_data['alternate_mobile_no'] : '',
+				'whatapp_no' => isset($post_data['whatapp_no']) ? $post_data['whatapp_no'] : '',
+				'email' => is_not_empty($post_data['email']) ? $post_data['email'] : '',
+				'username' => is_not_empty($post_data['username']) ? $post_data['username'] : '',
+				'password' => is_not_empty($post_data['password']) ? $post_data['password'] : '',
+				'eligibility_for_incentives' => ($post_data['eligibility_for_incentives']) > 0 ? $post_data['eligibility_for_incentives'] : 0,
+				'gender' => is_not_empty($post_data['gender']) ? $post_data['gender'] : '',
+				'date_of_birth' => is_not_empty($post_data['date_of_birth']) ? $post_data['date_of_birth'] : '',
+				'permanant_address' => is_not_empty($post_data['permanant_address']) ? $post_data['permanant_address'] : '',
+				'temporary_address' => is_not_empty($post_data['temporary_address']) ? $post_data['temporary_address'] : '',
+				'country' => is_not_empty($post_data['country']) ? $post_data['country'] : '',
+				'state' => is_not_empty($post_data['state']) ? $post_data['state'] : '',
+				'city' => is_not_empty($post_data['city']) ? $post_data['city'] : '',
+				'pin_code' => is_not_empty($post_data['pin_code']) ? $post_data['pin_code'] : '',
+				'role' => is_not_empty($post_data['role']) ? $post_data['role'] : '',
+				'designation' => is_not_empty($post_data['designation']) ? $post_data['designation'] : '',
+				'education_qualification' => is_not_empty($post_data['education_qualification']) ? $post_data['education_qualification'] : '',
+				'photo_id_type' => is_not_empty($post_data['photo_id_type']) ? $post_data['photo_id_type'] : '',
+				'photo_id' => $staff_photo_id_file_path,
+				'photo' =>  $staff_document_file_path,
+			);
+
+			$where_data = array(
+				'id' => $post_data['id'],						
+			); 
+
+			if(count($update_array)>0)
+			{
+				$this->common_model->update_by_where_array('aicpe_staff_managment',$where_data,$update_array);
+
+				$response = array('type'=>'success','msg'=>'Staff data updated successfully.');
+
+			}
+			
+		}
+		else
+		{
+			  if(!empty($_FILES['photo']['name']))
+			   {
+                    $config['upload_path']      = "uploads/staff_document";
+                    $config['allowed_types']    = "gif|jpg|png|jpeg";
+                    $config['encrypt_name']     =  true;
+                    $config['overwrite']        =  TRUE;
+                 
+                    $this->load->library('upload', $config);
+                    $this->upload->initialize($config);
+                    if(!$this->upload->do_upload('photo'))
+                    {
+                        $error  = array('error'  => $this->upload->display_errors());
+                        
+                    }
+                    else
+                    {
+                        $staff_document_file  = $this->upload->data('file_name');
+                        $staff_document_file_path = $config['upload_path'].$staff_document_file;
+                    }
+                }
+                $staff_photo_id_file_path='';
+
+			   if(!empty($_FILES['photo_id']['name']))
+			   {
+                    $config['upload_path']      = "uploads/staff_id_document";
+                    $config['allowed_types']    = "gif|jpg|png|jpeg";
+                    $config['encrypt_name']     =  true;
+                    $config['overwrite']        =  TRUE;
+                 
+                    $this->load->library('upload', $config);
+                    $this->upload->initialize($config);
+                    if(!$this->upload->do_upload('photo_id'))
+                    {
+                        $error  = array('error'  => $this->upload->display_errors());
+                        
+                    }
+                    else
+                    {
+                        $staff_photo_id_file  = $this->upload->data('file_name');
+                        $staff_photo_id_file_path = $config['upload_path'].$staff_photo_id_file;
+                    }
+               }
+              
+			$insert_data = array(
+				'staff_name' => is_not_empty($post_data['staff_name']) ? $post_data['staff_name'] : '',
+				'mobile_no' => is_not_empty($post_data['mobile_no']) ? $post_data['mobile_no'] : '',
+				'alternate_mobile_no' => is_not_empty($post_data['alternate_mobile_no']) ? $post_data['alternate_mobile_no'] : '',
+				'whatapp_no' => isset($post_data['whatapp_no']) ? $post_data['whatapp_no'] : '',
+				'email' => is_not_empty($post_data['email']) ? $post_data['email'] : '',
+				'username' => is_not_empty($post_data['username']) ? $post_data['username'] : '',
+				'password' => is_not_empty($post_data['password']) ? $post_data['password'] : '',
+				'eligibility_for_incentives' => is_not_empty($post_data['eligibility_for_incentives']) ? $post_data['eligibility_for_incentives'] : '',
+				'gender' => is_not_empty($post_data['gender']) ? $post_data['gender'] : '',
+				'date_of_birth' => is_not_empty($post_data['date_of_birth']) ? $post_data['date_of_birth'] : '',
+				'permanant_address' => is_not_empty($post_data['permanant_address']) ? $post_data['permanant_address'] : '',
+				'temporary_address' => is_not_empty($post_data['temporary_address']) ? $post_data['temporary_address'] : '',
+				'country' => is_not_empty($post_data['country']) ? $post_data['country'] : '',
+				'state' => is_not_empty($post_data['state']) ? $post_data['state'] : '',
+				'city' => is_not_empty($post_data['city']) ? $post_data['city'] : '',
+				'pin_code' => is_not_empty($post_data['pin_code']) ? $post_data['pin_code'] : '',
+				'role' => is_not_empty($post_data['role']) ? $post_data['role'] : '',
+				'designation' => is_not_empty($post_data['designation']) ? $post_data['designation'] : '',
+				'education_qualification' => is_not_empty($post_data['education_qualification']) ? $post_data['education_qualification'] : '',
+				'photo_id_type' => is_not_empty($post_data['photo_id_type']) ? $post_data['photo_id_type'] : '',
+				'photo_id' =>$staff_photo_id_file_path,
+				'photo' =>  $staff_document_file_path,
+			);
+
+			if(count($insert_data)>0)
+			{
+				$inserted_id = $this->common_model->insert_all('aicpe_staff_managment',$insert_data);
+				
+				$response = array('type'=>'success','msg'=>'Staff added successfully.');
+			}
+		}
+		
+		echo json_encode($response);
+	}
 
     /*
     @Author      : Varsha Wankhede

@@ -91,7 +91,7 @@
                             <div class="separator"></div>
                         </div>
                     </div>
-                    <div class="row">
+                    <div class="row" id="ajax_data">
                         <?php $this->load->view('admin/institution/assignment_ajax.php');?>
                     </div>
                 </div>
@@ -102,27 +102,76 @@
   <div class="modal fade modal-right" id="add_assignment" data-backdrop="static" role="dialog" >
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <form id="add_assignments_form" name="add_assignments_form" method="post" enctype="multipart/form-data"  role="form" onsubmit="return false;">
-                 <div class="modal-body">
-           <div class="form-group">
-                <label>Question Image</label>                 
-                <div class="input-group">
-                   
-                    <div class="custom-file">
-                        <input type="file" class="custom-file-input" required="required" name="que_img">
-                        <label class="custom-file-label">Choose file</label>
-                    </div>
-                </div>
-            </div>
-        </div>  
-              <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">Submit</button>
-                <button type="button" class="btn btn-outline-primary"
-                      data-dismiss="modal">Cancel</button>
+          <div class="modal-header custom-modal">
+                  <h5 class="modal-title white">Add Assignment Details</h5>
+                  <button type="button" class="close white" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                  </button>
               </div>
-        </form>
+            <form id="add_assignments_form" name="add_assignments_form" method="post" enctype="multipart/form-data"  role="form" onsubmit="return false;">
+                <div class="modal-body">
+                    <div class="form-group">
+                      <label>Course Name</label>
+                     <select class="form-control" name="course_name">
+                          <option value="">---Select Course Name--</option>
+                         <?php foreach($course_array as $key => $value): ?>
+                          <option value="<?= $key ?>"> <?= $value ?></option>
+                        <?php endforeach; ?>
+                      </select>
+                  </div>
+                  <div class="form-group">
+                      <label>Assignment Title</label>
+                      <input type="text" class="form-control" name="assignment_title" id="assignment_title" value="">
+                  </div>
+                  <div class="form-group">
+                      <label>Description</label>
+                      <textarea name="description" id="description" class="form-control" rows="3"></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label>Post Date</label>
+                    <div class="input-group ">
+                      <span class="input-group-text input-group-append input-group-addon" id="post_date_icon">
+                            <i class="simple-icon-calendar" ></i>
+                      </span>
+                      <input type="text" class="form-control" id="post_date" name="post_date" value="" >
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Submission Date</label>
+                    <div class="input-group ">
+                      <span class="input-group-text input-group-append input-group-addon" id="submission_date_icon">
+                            <i class="simple-icon-calendar" ></i>
+                      </span>
+                      <input type="text" class="form-control" id="submission_date" name="submission_date" value="" >
+                    </div>
+                  </div>
+                  <div class="form-group">
+                      <label>Assign Faculty</label>
+                      <select class="form-control" name="faculty">
+                          <option value="">--Assign Faculty--</option>
+                          <?php foreach($assign_faculty as $key => $value):?>
+                          <option value="<?= $key ?>"><?= $value ?></option>
+                          <?php endforeach; ?>
+                      </select>
+                  </div>
+                   <div class="form-group">
+                        <label>Question Image</label>                 
+                        <div class="input-group">
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" required="required" name="assignment_document">
+                                <label class="custom-file-label">Choose file</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>  
+                <div class="modal-footer">
+                  <button type="submit" class="btn btn-primary">ADD</button>
+                  <button type="button" class="btn btn-outline-primary"
+                        data-dismiss="modal">Cancel</button>
+                </div>
+            </form>
         </div>
-  </div>
+    </div>
   </div>
 <!-- -------------------------view assignment--------------------------- -->
 <div class="modal fade " id="viewAssignment" tabindex="-1" role="dialog" aria-labelledby="viewAssignment" aria-hidden="true">
@@ -228,6 +277,26 @@
       </div>
   </div>
 <?php $this->load->view('admin/includes/footer'); ?>
+<script type="text/javascript">
+  
+  $("#submission_date").datepicker({
+    inline:true,
+    formate:"yyyy-mm-dd",
+    maxDate:"today"
+  });
+  $("#submission_date_icon").click(function(){
+   $("#submission_date").datepicker("show");
+  });
+  $("#post_date").datepicker({
+    inline:true,
+    formate:"yyyy-mm-dd",
+    maxDate:"today"
+  });
+
+  $("#post_date_icon").click(function(){
+   $("#post_date").datepicker("show");
+  });
+</script>
 
 <script type="text/javascript">
 
@@ -235,23 +304,22 @@
 $('#add_assignments_form').on('submit',function(event){
 
     event.preventDefault();
-//var brand_name = $('#brand_name').val().trim();
- var form_data = $('#add_assignments_form').serialize();
-
+   var formdata = new FormData(this);
 $.ajax({
     url: '<?php echo base_url().'save-institutions-assignments'; ?>',
     type: 'POST',
     dataType: 'json',
-    data: form_data,
+    data: formdata,          
+    processData: false,
+    contentType: false,
     beforeSend: function()
     {
         $(".main-loader").fadeIn();
     },      
     success:function(data)
     {
-        $('#edit_admission').modal('hide');
+        $('#add_assignment').modal('hide');
         toastr[data.type](data.msg);
-
         page_update();
 
     }   
@@ -394,8 +462,15 @@ function page_update()
 
         $("body").on("change",'#per_page_option',function(e)
         {
-            $('#search-btn').trigger('click');
-             return false;
+          $('#per_page_value').val($('#per_page_option').val());
+            $('#pagination_page').val('1');
+         
+            change_search_data("per_page",$('#per_page_option').val())
+    
+        change_search_data("page",1);
+        
+        page_update();
+        return false;
         });
       $("body").on("click",'#reset-btn',function(){
        

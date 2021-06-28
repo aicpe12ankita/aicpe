@@ -27,12 +27,21 @@
                       <textarea name="description" id="description" class="form-control" rows="3"><?= $student_data['description'];?></textarea>
                   </div>
                   <div class="form-group">
-                    <label>Submission Date</label>
-                    <div class="input-group date">
-                      <span class="input-group-text input-group-append input-group-addon">
-                            <i class="simple-icon-calendar"></i>
+                    <label>Post Date</label>
+                    <div class="input-group ">
+                      <span class="input-group-text input-group-append input-group-addon" id="post_date_icon">
+                            <i class="simple-icon-calendar" ></i>
                       </span>
-                      <input type="text" class="form-control" name="submission_date" value="<?= format_date($student_data['submission_date'],'d/m/y');?>" >
+                      <input type="text" class="form-control" id="post_date" name="post_date" value="<?= $student_data['post_date'];?>" >
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Submission Date</label>
+                    <div class="input-group ">
+                      <span class="input-group-text input-group-append input-group-addon" id="submission_date_icon">
+                            <i class="simple-icon-calendar" ></i>
+                      </span>
+                      <input type="text" class="form-control" id="submission_date" name="submission_date" value="<?= $student_data['submission_date'];?>" >
                     </div>
                   </div>
                   
@@ -48,12 +57,8 @@
                   <div class="form-group">
                       <label>Upload Assignment Document</label>
                         <input type="file" value="" name="assignment_document">
-                          
-
                   </div>
-                
               </div>
-
               <div class="modal-footer">
                 <button type="submit" class="btn btn-primary">Submit</button>
                 <button type="button" class="btn btn-outline-primary"
@@ -62,9 +67,25 @@
             </form>
           </div>
       </div>
-
-      <script type="text/javascript">
+<script type="text/javascript">
+   
+  
  $(document).ready(function(){  
+
+  $("#submission_date,#post_date").datepicker({
+    inline:true,
+    formate:"yyyy-mm-dd",
+    maxDate:"today"
+  });
+  $("#submission_date_icon").click(function(){
+   $("#submission_date").datepicker("show");
+  });
+
+  $("#post_date_icon").click(function(){
+   $("#post_date").datepicker("show");
+  });
+
+
 $('#edit_assignments_form').on('submit',function(event){
 
     event.preventDefault();
@@ -86,6 +107,7 @@ $('#edit_assignments_form').on('submit',function(event){
             {
                 $('#edit_assignment').modal('hide');
                 toastr[data.type](data.msg);
+                page_update();
             }   
         });
        return false;

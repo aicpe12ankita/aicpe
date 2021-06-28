@@ -42,10 +42,10 @@
                     <p class="text-muted"><?= get_value($row,'password','-');?></p>
                 </td>
                  <td>
-                    <?php if($row['eligibility_for_incentives']=='0'){?>
+                    <?php if($row['eligibility_for_incentives']=='1'){?>
                     <p class="badge badge-info">YES</p>
                     <?php } else {?>
-                        <p class="badge badge-info">NO</p>
+                        <p class="badge badge-warning">NO</p>
                     <?php } ?>
                 </td>
                  <td>

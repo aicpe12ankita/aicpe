@@ -27,10 +27,10 @@
                     <p class="text-muted"><?= get_value($row,'assignment_title');?></p>
                 </td>
                 <td>
-                    <p class="text-muted"><?= format_date(get_value($row,'post_date'),'d/m/y');?></p>
+                    <p class="text-muted"><?= format_date($row['post_date'],'d-m-y');?></p>
                 </td>
                 <td>
-                    <p class="text-muted"><?= format_date(get_value($row,'submission_date'),'d/m/y');?></p>
+                    <p class="text-muted"><?= format_date($row['submission_date'],'d-m-y');?></p>
                 </td>
                 <td>
                    <p class="text-muted"><?= get_value($assign_faculty,$row['faculty'],'-');?></p>
